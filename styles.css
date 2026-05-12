@@ -144,6 +144,16 @@
 	min-width: var(--max-width);
 }
 
+.custom-editor-component {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.custom-editor-component .cm-editor {
+	height: 100%;
+}
+
 .is-phone .screenplay {
 	width: fit-content;
 	min-width: fit-content;
