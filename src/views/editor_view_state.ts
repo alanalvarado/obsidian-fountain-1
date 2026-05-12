@@ -68,6 +68,7 @@ export class EditorViewState implements ViewState {
     const theme = EditorView.theme({
       "&": {
         fontSize: "12pt",
+        height: "100%",
       },
       ".cm-content": {
         fontFamily: "inherit",
@@ -76,6 +77,7 @@ export class EditorViewState implements ViewState {
       ".cm-scroller": {
         fontFamily: "inherit",
         lineHeight: "inherit",
+        minHeight: "100%",
       },
     });
     const state = EditorState.create({
@@ -112,6 +114,16 @@ export class EditorViewState implements ViewState {
       state: state,
       parent: editorContainer,
     });
+
+    // Ensure that clicking anywhere in the container focuses the editor.
+    // This handles cases where the editor might not fill the entire area
+    // (e.g. empty documents) and prevents the cursor from disappearing.
+    editorContainer.addEventListener("click", (evt) => {
+      if (evt.target === editorContainer) {
+        this.cmEditor.focus();
+      }
+    });
+
     this.cmEditor.contentDOM.spellcheck = spellCheckEnabled;
   }
 
