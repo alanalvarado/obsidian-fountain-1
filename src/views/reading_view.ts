@@ -25,8 +25,10 @@ function renderAction(
   action: Action,
   script: FountainScript,
   settings: ShowHideSettings,
+  spotlightCharacter?: string,
 ): void {
-  if (renderLines(parent, script, ["action"], action.lines, true, settings)) {
+  const classes = ["action", ...(spotlightCharacter ? ["dimmed"] : [])];
+  if (renderLines(parent, script, classes, action.lines, true, settings)) {
     // Only add a manual blank line if the element didn't already end with one.
     // This prevents double-spacing when the source already contains blank lines.
     const lastLine = action.lines[action.lines.length - 1];
@@ -41,8 +43,10 @@ function renderLyrics(
   lyrics: Lyrics,
   script: FountainScript,
   settings: ShowHideSettings,
+  spotlightCharacter?: string,
 ): void {
-  if (renderLines(parent, script, ["lyrics"], lyrics.lines, true, settings)) {
+  const classes = ["lyrics", ...(spotlightCharacter ? ["dimmed"] : [])];
+  if (renderLines(parent, script, classes, lyrics.lines, true, settings)) {
     const lastLine = lyrics.lines[lyrics.lines.length - 1];
     if (lastLine && lastLine.elements.length > 0) {
       renderBlankLine(parent, lyrics.range);
@@ -206,10 +210,10 @@ function renderSynopsis(
   script: FountainScript,
   synopsis: Synopsis,
   settings: ShowHideSettings,
+  spotlightCharacter?: string,
 ): void {
-  if (
-    renderLines(parent, script, ["synopsis"], synopsis.lines, true, settings)
-  ) {
+  const classes = ["synopsis", ...(spotlightCharacter ? ["dimmed"] : [])];
+  if (renderLines(parent, script, classes, synopsis.lines, true, settings)) {
     const lastLine = synopsis.lines[synopsis.lines.length - 1];
     if (lastLine && lastLine.elements.length > 0) {
       renderBlankLine(parent, synopsis.range);
@@ -230,12 +234,16 @@ function renderElement(
 ): void {
   switch (el.kind) {
     case "action":
-      renderAction(parent, el, script, settings);
+      renderAction(parent, el, script, settings, spotlightCharacter);
       break;
     case "scene":
       {
+        const sceneClasses = [
+          "scene-heading-container",
+          ...(spotlightCharacter ? ["dimmed"] : []),
+        ];
         const sceneDiv = parent.createDiv({
-          cls: "scene-heading-container",
+          cls: sceneClasses,
           attr: dataRange(el.range),
         });
 
@@ -276,7 +284,7 @@ function renderElement(
       break;
 
     case "synopsis":
-      renderSynopsis(parent, script, el, settings);
+      renderSynopsis(parent, script, el, settings, spotlightCharacter);
       break;
 
     case "section":
@@ -291,21 +299,33 @@ function renderElement(
           parent.createEl("hr");
         }
         const tag = `h${el.depth ?? 1}` as keyof HTMLElementTagNameMap;
+        const sectionClasses = ["section", ...(spotlightCharacter ? ["dimmed"] : [])];
         parent.createEl(tag, {
-          cls: "section",
+          cls: sectionClasses,
           attr: dataRange(el.range),
           text: title,
         });
       }
       break;
     case "dialogue":
-      renderDialogue(parent, el, script, settings, blackoutCharacter, spotlightCharacter);
+      renderDialogue(
+        parent,
+        el,
+        script,
+        settings,
+        blackoutCharacter,
+        spotlightCharacter,
+      );
       break;
     case "transition":
       {
         const transitionText = extractTransitionText(el, script);
+        const transitionClasses = [
+          "transition",
+          ...(spotlightCharacter ? ["dimmed"] : []),
+        ];
         parent.createDiv({
-          cls: "transition",
+          cls: transitionClasses,
           attr: dataRange(el.range),
           text: transitionText,
         });
@@ -318,7 +338,7 @@ function renderElement(
       });
       break;
     case "lyrics":
-      renderLyrics(parent, el, script, settings);
+      renderLyrics(parent, el, script, settings, spotlightCharacter);
       break;
   }
 }
