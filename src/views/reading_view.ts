@@ -27,7 +27,12 @@ function renderAction(
   settings: ShowHideSettings,
 ): void {
   if (renderLines(parent, script, ["action"], action.lines, true, settings)) {
-    renderBlankLine(parent, action.range);
+    // Only add a manual blank line if the element didn't already end with one.
+    // This prevents double-spacing when the source already contains blank lines.
+    const lastLine = action.lines[action.lines.length - 1];
+    if (lastLine && lastLine.elements.length > 0) {
+      renderBlankLine(parent, action.range);
+    }
   }
 }
 
@@ -38,7 +43,10 @@ function renderLyrics(
   settings: ShowHideSettings,
 ): void {
   if (renderLines(parent, script, ["lyrics"], lyrics.lines, true, settings)) {
-    renderBlankLine(parent, lyrics.range);
+    const lastLine = lyrics.lines[lyrics.lines.length - 1];
+    if (lastLine && lastLine.elements.length > 0) {
+      renderBlankLine(parent, lyrics.range);
+    }
   }
 }
 
@@ -164,7 +172,7 @@ function renderLines(
     const centered = line.centered ? "centered" : "";
     // Merge the lineClasses array with centered if present
     const allClasses = centered ? [centered, ...lineClasses] : lineClasses;
-    parent.createDiv({ attr: dataRange(line.range) }, (div) => {
+    parent.createDiv({ cls: "fountain-line", attr: dataRange(line.range) }, (div) => {
       const innerDiv = div.createDiv({ cls: allClasses });
       if (line.elements.length === 0) {
         // Need a nbsp so that the div is not empty and gets regular text height
@@ -190,8 +198,14 @@ function renderSynopsis(
   synopsis: Synopsis,
   settings: ShowHideSettings,
 ): void {
-  renderLines(parent, script, ["synopsis"], synopsis.lines, true, settings);
-  renderBlankLine(parent, synopsis.range);
+  if (
+    renderLines(parent, script, ["synopsis"], synopsis.lines, true, settings)
+  ) {
+    const lastLine = synopsis.lines[synopsis.lines.length - 1];
+    if (lastLine && lastLine.elements.length > 0) {
+      renderBlankLine(parent, synopsis.range);
+    }
+  }
 }
 
 /**

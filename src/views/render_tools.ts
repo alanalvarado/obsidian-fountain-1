@@ -13,6 +13,7 @@ export function endOfRange(r: Range): Range {
 /// Generate the blank line at the end of a range.
 export function renderBlankLine(parent: HTMLElement, r?: Range): HTMLElement {
   return parent.createDiv({
+    cls: "fountain-line",
     // end,end on purpose
     attr: r ? dataRange(endOfRange(r)) : {},
     text: NBSP,
