@@ -165,6 +165,7 @@ export type SceneHeading = {
   // inside `range` but isn't separately broken out.
   forced: boolean;
   number: Range | null;
+  color?: string;
 };
 
 export type Transition = {
@@ -213,6 +214,8 @@ export type Section = {
   kind: "section";
   range: Range;
   depth: number;
+  text?: string;
+  color?: string;
 };
 
 export type Lyrics = {

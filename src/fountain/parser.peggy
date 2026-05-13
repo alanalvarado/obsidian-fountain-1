@@ -163,8 +163,8 @@ Boneyard "boneyard"
  { return mkBoneyard(range()); }
 
 Section
- = hashes:Hashes RestOfLine NewLineOrEndOfInput
- { return mkSection(range(), hashes); }
+ = hashes:Hashes [ \t]* lineText:([^\n]*) NewLineOrEndOfInput
+ { return mkSection(range(), hashes, lineText.join("")); }
 
 Hashes
  = "#"+ { return text().length }

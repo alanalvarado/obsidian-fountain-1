@@ -353,8 +353,17 @@ class TocSection extends SidebarSection {
         const sect = section.section;
         const d = s.createEl("h1", {
           cls: "section",
-          text: script.sliceDocument(sect.range),
+          text: sect.text || script.sliceDocument(sect.range),
         });
+        if (sect.color) {
+          d.addClass(`color-${sect.color}`);
+          d.style.setProperty(
+            "--item-color",
+            sect.color.startsWith("#")
+              ? sect.color
+              : `var(--fountain-color-${sect.color})`,
+          );
+        }
         d.addEventListener("click", (evt: Event) => {
           this.callbacks.scrollToRange(sect.range);
         });
@@ -366,6 +375,15 @@ class TocSection extends SidebarSection {
           const d = s.createDiv({
             cls: "scene-heading",
           });
+          if (el_scene.color) {
+            d.addClass(`color-${el_scene.color}`);
+            d.style.setProperty(
+              "--item-color",
+              el_scene.color.startsWith("#")
+                ? el_scene.color
+                : `var(--fountain-color-${el_scene.color})`,
+            );
+          }
           d.createSpan({ text: el_scene.heading });
           d.createSpan({
             cls: "scene-length",

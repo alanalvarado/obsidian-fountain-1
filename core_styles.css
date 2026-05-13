@@ -464,7 +464,7 @@
 }
 
 .screenplay-toc .preview {
-	color: var(--text-faint);
+	color: var(--text-muted);
 	font-family:
 		var(--screenplay-font), "Courier Final Draft", "Courier",
 		var(--font-monospace);
@@ -1001,7 +1001,7 @@
 }
 
 .screenplay-index-card .preview {
-	color: var(--text-faint);
+	color: var(--text-muted);
 	font-family:
 		var(--screenplay-font), "Courier Final Draft", "Courier",
 		var(--font-monospace);
@@ -1450,4 +1450,55 @@
 	color: var(--text-faint);
 	white-space: nowrap;
 	flex-shrink: 0;
+}
+
+/* BEAT Color Palette Variables */
+:is(.screenplay, .screenplay-toc, .screenplay-index-cards) {
+	--fountain-color-red: #ef0049;
+	--fountain-color-blue: #0081ef;
+	--fountain-color-green: #00df79;
+	--fountain-color-pink: #fe83df;
+	--fountain-color-magenta: #ec008c;
+	--fountain-color-gray: #808080;
+	--fountain-color-grey: #808080;
+	--fountain-color-purple: #b520da;
+	--fountain-color-yellow: #fbc82d;
+	--fountain-color-goldenrod: #d7940f;
+	--fountain-color-rose: #ecb898;
+	--fountain-color-buff: #766456;
+	--fountain-color-cherry: #ec5a96;
+	--fountain-color-teal: #0ce0e3;
+	--fountain-color-orange: #ffa10d;
+	--fountain-color-brown: #a96a07;
+	--fountain-color-lightgray: #dcdcdc;
+	--fountain-color-darkgray: #aaaaaa;
+	--fountain-color-verydarkgray: #646464;
+	--fountain-color-backgroundgray: #292a2d;
+	--fountain-color-fdxremoval: #ffbedc;
+	--fountain-color-mint: #48e7d3;
+	--fountain-color-violet: #743ee6;
+	--fountain-color-olive: #4d932c;
+	--fountain-color-cyan: #07bdeb;
+}
+
+/* Color Highlighting Rules */
+
+/* 1. Stripes & Layout (TOC & Index Cards ONLY) */
+:is(.screenplay-toc, .screenplay-index-cards) [style*="--item-color"] {
+	--stripe-width: 4px;
+	border-left: var(--stripe-width) solid var(--item-color);
+	padding-left: 6px;
+}
+
+
+/* 3. Text Coloring (Applied to headings directly or via parent containers) */
+:is(.scene-heading, .section, .cm-line)[style*="--item-color"],
+[style*="--item-color"] :is(.scene-heading, .section) {
+	color: var(--item-color) !important;
+}
+
+/* 4. Reset color for the tag itself in the editor */
+.screenplay.cm-editor .color-tag {
+	color: var(--text-normal) !important;
+	opacity: 0.5;
 }

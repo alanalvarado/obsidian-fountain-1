@@ -483,6 +483,13 @@ function renderIndexCard(
         cls: "screenplay-index-card",
         attr: {
           ...dataRange(scene.range),
+          style: heading.color
+            ? `--item-color: ${
+                heading.color.startsWith("#")
+                  ? heading.color
+                  : `var(--fountain-color-${heading.color})`
+              }`
+            : "",
         },
       },
       (indexCard) => {
@@ -643,7 +650,16 @@ function renderSection(
     parent.createDiv({ cls: "section-heading-row" }, (row) => {
       row.createEl(hTag, {
         cls: "section",
-        attr: { "data-start": sec.range.start },
+        attr: {
+          "data-start": sec.range.start,
+          style: sec.color
+            ? `--item-color: ${
+                sec.color.startsWith("#")
+                  ? sec.color
+                  : `var(--fountain-color-${sec.color})`
+              }`
+            : "",
+        },
         text: title,
       });
       row.createDiv(

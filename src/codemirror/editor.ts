@@ -165,13 +165,87 @@ class FountainEditorPlugin implements PluginValue {
           continue;
         }
         switch (el.kind) {
-          case "scene":
-            builder.add(el.range.start, el.range.end, scene);
-            break;
+          case "scene": {
+            let sceneDeco = scene;
+            let tagRange: { start: number; end: number } | null = null;
 
-          case "section":
-            builder.add(el.range.start, el.range.end, section);
+            if (el.color) {
+              const style = `--item-color: ${
+                el.color.startsWith("#")
+                  ? el.color
+                  : `var(--fountain-color-${el.color})`
+              }`;
+              sceneDeco = Decoration.mark({
+                class: `scene-heading color-${el.color}`,
+                attributes: { style },
+              });
+
+              const rawText = view.state.doc.sliceString(
+                el.range.start,
+                el.range.end,
+              );
+              const tagMatch = rawText.match(
+                /\[\[(?:COLOR\s+)?([a-zA-Z]+|#[a-fA-F0-9]{3,6})\]\]/i,
+              );
+              if (tagMatch) {
+                tagRange = {
+                  start: el.range.start + tagMatch.index!,
+                  end: el.range.start + tagMatch.index! + tagMatch[0].length,
+                };
+              }
+            }
+
+            builder.add(el.range.start, el.range.end, sceneDeco);
+            if (tagRange) {
+              builder.add(
+                tagRange.start,
+                tagRange.end,
+                Decoration.mark({ class: "color-tag" }),
+              );
+            }
             break;
+          }
+
+          case "section": {
+            let sectionDeco = section;
+            let tagRange: { start: number; end: number } | null = null;
+
+            if (el.color) {
+              const style = `--item-color: ${
+                el.color.startsWith("#")
+                  ? el.color
+                  : `var(--fountain-color-${el.color})`
+              }`;
+              sectionDeco = Decoration.mark({
+                class: `section color-${el.color}`,
+                attributes: { style },
+              });
+
+              const rawText = view.state.doc.sliceString(
+                el.range.start,
+                el.range.end,
+              );
+              const tagMatch = rawText.match(
+                /\[\[(?:COLOR\s+)?([a-zA-Z]+|#[a-fA-F0-9]{3,6})\]\]/i,
+              );
+              if (tagMatch) {
+                tagRange = {
+                  start: el.range.start + tagMatch.index!,
+                  end: el.range.start + tagMatch.index! + tagMatch[0].length,
+                };
+              }
+            }
+
+            builder.add(el.range.start, el.range.end, sectionDeco);
+            if (tagRange) {
+              builder.add(
+                tagRange.start,
+                tagRange.end,
+                Decoration.mark({ class: "color-tag" }),
+              );
+            }
+            break;
+          }
 
           case "synopsis":
             builder.add(el.range.start, el.range.end, synopsis);
