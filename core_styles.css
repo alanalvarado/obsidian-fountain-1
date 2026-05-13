@@ -7,29 +7,21 @@
 	font-family:
 		var(--screenplay-font), "Courier Final Draft", "Courier",
 		var(--font-monospace);
-	--font-text:
-		var(--screenplay-font), "Courier Final Draft", "Courier",
-		var(--font-monospace);
-	--font-preview-view:
-		var(--screenplay-font), "Courier Final Draft", "Courier",
-		var(--font-monospace);
-	--h1-font: var(--screenplay-font);
-	--h2-font: var(--screenplay-font);
-	--h3-font: var(--screenplay-font);
-	--h4-font: var(--screenplay-font);
-	--h5-font: var(--screenplay-font);
 	--h6-font: var(--screenplay-font);
 	--file-margins: 1in 1in 1in 1.5in;
 	--file-line-width: 6.2in !important;
-	--font-text: var(--screenplay-font);
-	font-size: 12pt;
-	line-height: 1.1;
+	font-size: 12pt !important;
+	line-height: 1.1 !important;
 	padding: 0;
 	margin: 0em auto;
 	max-width: var(--max-width);
 	overflow-wrap: break-word;
 	word-break: normal;
+	user-select: text !important;
+	-webkit-user-select: text !important;
 }
+
+
 
 /* TOC uses UI font for better readability in sidebar */
 .screenplay-toc {
@@ -105,10 +97,26 @@
 	border-radius: var(--radius-m);
 }
 
-.screenplay:not(.is-phone) {
+.screenplay:not(.is-phone):not(.cm-editor) {
 	width: var(--max-width);
 	min-width: var(--max-width);
 }
+
+.screenplay.cm-editor {
+	width: 100% !important;
+	max-width: none !important;
+}
+
+
+.screenplay.cm-editor .cm-content,
+.screenplay.cm-editor .cm-line {
+	max-width: var(--max-width) !important;
+	width: var(--max-width) !important;
+	margin: 0 auto !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
 
 .custom-editor-component {
 	height: 100%;
@@ -575,8 +583,13 @@
 }
 
 .screenplay .cm-selectionLayer .cm-selectionBackground {
-	background-color: var(--text-selection);
+	background-color: var(--text-selection) !important;
 }
+
+.screenplay .cm-content ::selection {
+	color: inherit !important;
+}
+
 
 .screenplay.cm-editor:focus,
 .cm-editor.cm-focused {

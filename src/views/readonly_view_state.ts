@@ -189,8 +189,14 @@ export class ReadonlyViewState implements ViewState {
   focus(): void {}
   setSpellCheck(_enabled: boolean): void {}
   hasSelection(): boolean {
-    return false;
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      return false;
+    }
+    const range = selection.getRangeAt(0);
+    return this.contentEl.contains(range.commonAncestorContainer);
   }
+
 
   rangeOfFirstVisibleLine(): Range | null {
     const screenplay = this.contentEl.querySelector(".screenplay");

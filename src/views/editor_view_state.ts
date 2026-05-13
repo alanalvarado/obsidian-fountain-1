@@ -242,14 +242,26 @@ export class EditorViewState implements ViewState {
   render(): void {}
 
   rangeOfFirstVisibleLine(): Range | null {
-    const scrollContainer =
-      firstScrollableElement(this.cmEditor.scrollDOM) ??
-      this.cmEditor.scrollDOM;
-    const bounds = scrollContainer.getBoundingClientRect();
-    const pos = this.cmEditor.posAtCoords({ x: bounds.x, y: bounds.y + 5 });
-    const lp = this.cmEditor.lineBlockAt(pos ?? 0);
-    return { start: lp.from, end: lp.to + 1 };
+    const view = this.cmEditor;
+    const viewport = view.viewport;
+    const scroller = firstScrollableElement(view.scrollDOM) ?? view.scrollDOM;
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const topThreshold = scrollerRect.top;
+
+
+    for (let i = viewport.from; i < viewport.to; ) {
+      const line = view.lineBlockAt(i);
+      const lineRect = view.coordsAtPos(line.from);
+      // If the line's bottom is at or below the top of the scroller, it's the first visible line.
+      if (lineRect && lineRect.bottom >= topThreshold) {
+        return { start: line.from, end: line.to + 1 };
+      }
+      i = line.to + 1;
+    }
+    return null;
   }
+
 
   cursorOffset(): number {
     return this.cmEditor.state.selection.main.head;
