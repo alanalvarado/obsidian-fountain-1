@@ -1,20 +1,30 @@
-.screenplay,
-.screenplay-toc {
+.screenplay {
 	--screenplay-font: "Courier Prime";
 	--bold-weight: 600;
 	--max-width: 61ch;
 	--synopsis-margin: 2ch;
 	font-family:
 		var(--screenplay-font), "Courier Final Draft", "Courier",
-		var(--font-monospace);
+		var(--font-monospace) !important;
 	--h6-font: var(--screenplay-font);
-	--file-margins: 1in 1in 1in 1.5in;
-	--file-line-width: 6.2in !important;
 	font-size: 12pt !important;
 	line-height: 1.1 !important;
-	padding: 0;
-	margin: 0em auto;
-	max-width: var(--max-width);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+
+	/* Continuous Page Layout Settings */
+	background-color: var(--background-primary) !important;
+	color: var(--text-normal) !important;
+	width: 8.5in !important;
+	max-width: 100% !important;
+	min-height: 11in;
+	height: fit-content !important;
+	margin: 20px auto !important;
+	padding: 1in 1in 1in 1.5in !important;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--background-modifier-border);
+	box-sizing: border-box !important;
+	position: relative;
 	overflow-wrap: break-word;
 	word-break: normal;
 	user-select: text !important;
@@ -30,6 +40,8 @@
 	line-height: 1.4;
 	max-width: none;
 	padding: 4px;
+	margin: 0;
+	background-color: transparent;
 }
 
 .screenplay-snippets .snippet {
@@ -97,35 +109,60 @@
 	border-radius: var(--radius-m);
 }
 
-.screenplay:not(.is-phone):not(.cm-editor) {
-	width: var(--max-width);
-	min-width: var(--max-width);
+.fountain-view-container {
+	background-color: var(--background-secondary-alt) !important;
+	overflow: auto !important;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100%;
 }
 
+/* Ensure the editor fills the page but keeps the padding */
 .screenplay.cm-editor {
-	width: 100% !important;
-	max-width: none !important;
+	height: auto !important;
+	min-height: 11in;
+	width: 8.5in !important;
+	padding: 1in 1in 1in 1.5in !important;
+	margin: 20px auto !important;
+	background-color: var(--background-primary) !important;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--background-modifier-border);
+	box-sizing: border-box !important;
 }
 
+.screenplay.cm-editor .cm-scroller {
+	overflow: visible !important;
+	display: block !important;
+}
 
 .screenplay.cm-editor .cm-content,
 .screenplay.cm-editor .cm-line {
-	max-width: var(--max-width) !important;
-	width: var(--max-width) !important;
-	margin: 0 auto !important;
+	width: 100% !important;
+	max-width: 100% !important;
 	padding-left: 0 !important;
 	padding-right: 0 !important;
+	margin: 0 !important;
+}
+
+/* Position the gutter in the left margin */
+.screenplay.cm-editor .cm-gutters {
+	position: absolute !important;
+	left: 0.5in !important; /* Position it within the 1.5in left margin */
+	background-color: transparent !important;
+	border: none !important;
+	z-index: 10;
 }
 
 
 .custom-editor-component {
-	height: 100%;
+	height: auto !important;
 	display: flex;
 	flex-direction: column;
 }
 
 .custom-editor-component .cm-editor {
-	height: 100%;
+	height: auto !important;
 }
 
 .is-phone .screenplay {
