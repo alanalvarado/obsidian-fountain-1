@@ -65,8 +65,8 @@ export function calculateMetrics(
             characterCount += text.length;
           } else {
             const text = document.slice(c.line.range.start, c.line.range.end);
-            // Screenplay standard: Dialogue wraps at ~35 chars
-            const wrapLines = Math.ceil(text.length / 35) || 1;
+            // Screenplay standard: Dialogue wraps at ~30 chars
+            const wrapLines = Math.ceil(text.length / 30) || 1;
             lines += wrapLines;
             dialogueLines += wrapLines;
             wordCount += text.split(/\s+/).filter(Boolean).length;

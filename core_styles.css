@@ -1,7 +1,7 @@
 .screenplay {
 	--screenplay-font: "Courier Prime";
 	--bold-weight: 600;
-	--max-width: 61ch;
+	--max-width: 60ch;
 	--synopsis-margin: 2ch;
 	font-family:
 		var(--screenplay-font), "Courier Final Draft", "Courier",
@@ -138,6 +138,16 @@
 	box-sizing: border-box !important;
 }
 
+.screenplay.cm-editor .cm-line .dialogue-character-name {
+	display: inline-block;
+	padding-left: 2.0in;
+}
+
+.screenplay.cm-editor .cm-line .dialogue-character-extension {
+	display: inline-block;
+	padding-left: 0.5in;
+}
+
 .screenplay.cm-editor .cm-scroller {
 	overflow: visible !important;
 	display: block !important;
@@ -196,22 +206,29 @@
 	color: var(--h2-color);
 	font-weight: var(--bold-weight);
 	font-size: inherit;
-	padding: 0 0 0 2.5in;
+	padding: 0 0 0 2.0in;
 	margin: 0;
 	width: fit-content;
 	break-after: avoid-page;
 	text-align: left;
 }
 
+.screenplay .dialogue-character-extension {
+	display: inline-block;
+	padding-left: 0.5in;
+	width: 1.0in;
+	white-space: nowrap;
+}
+
 .screenplay .dialogue-words {
 	display: block;
 	text-align: left;
-	width: 34ch;
-	max-width: 34ch;
+	width: 30ch;
+	max-width: 30ch;
 	margin-top: 0;
 	margin-bottom: 0;
 	margin-right: 0;
-	margin-left: 1.5in;
+	margin-left: 1.0in;
 	padding: 0px;
 	break-before: avoid-page;
 }
@@ -220,8 +237,8 @@
    so block-level CSS (max-width) can constrain wrapping exactly like the
    reading-mode .dialogue-words div does. */
 .screenplay.cm-editor .cm-line.dialogue-words-line {
-	padding-left: 1.5in;
-	max-width: calc(1.5in + 34ch);
+	padding-left: 1.0in;
+	max-width: calc(1.0in + 30ch);
 	box-sizing: border-box;
 }
 
@@ -259,7 +276,7 @@
 
 /* parentheticals */
 .screenplay .dialogue-parenthetical {
-	margin: 0 0 0 1.91in;
+	margin: 0 0 0 1.5in;
 	padding: 0px;
 	text-align: left;
 	font-style: italic;
@@ -375,7 +392,8 @@
 	color: var(--h3-color);
 	font-weight: var(--bold-weight);
 	font-size: inherit;
-	text-align: right;
+	text-align: left;
+	margin-left: 4.5in;
 }
 
 .screenplay h1,
@@ -1436,8 +1454,8 @@
 .label-dialogue { color: #818cf8; }
 .label-action { color: #f59e0b; }
 
-/* TOC Enhancements */
-.scene-heading {
+/* TOC & Index Card Enhancements */
+:is(.screenplay-toc, .screenplay-index-card, .screenplay-index-cards) .scene-heading {
 	display: flex;
 	justify-content: space-between;
 	align-items: baseline;

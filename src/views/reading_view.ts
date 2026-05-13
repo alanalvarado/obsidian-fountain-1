@@ -68,15 +68,25 @@ function renderDialogueInner(
 
   parent.createDiv(
     {
-      attr: dataRange(dialogue.characterRange),
+      attr: dataRange({
+        start: dialogue.characterRange.start,
+        end: dialogue.characterExtensionsRange.end,
+      }),
     },
     (div) => {
       div.createEl("h4", {
         cls: characterClasses,
-        text: script.sliceDocument({
-          start: dialogue.characterRange.start,
-          end: dialogue.characterExtensionsRange.end,
-        }),
+      }, (h4) => {
+        h4.createSpan({
+          cls: "dialogue-character-name",
+          text: script.sliceDocument(dialogue.characterRange),
+        });
+        if (dialogue.characterExtensionsRange.start !== dialogue.characterExtensionsRange.end) {
+          h4.createSpan({
+            cls: "dialogue-character-extension",
+            text: script.sliceDocument(dialogue.characterExtensionsRange),
+          });
+        }
       });
     },
   );

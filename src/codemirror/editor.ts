@@ -137,7 +137,8 @@ class FountainEditorPlugin implements PluginValue {
     const section = Decoration.mark({ class: "section" });
     const synopsis = Decoration.mark({ class: "synopsis" });
     const parenthetical = Decoration.mark({ class: "dialogue-parenthetical" });
-    const character = Decoration.mark({ class: "dialogue-character" });
+    const characterName = Decoration.mark({ class: "dialogue-character-name" });
+    const characterExtension = Decoration.mark({ class: "dialogue-character-extension" });
     const words = Decoration.mark({ class: "dialogue-words" });
     const action = Decoration.mark({ class: "action" });
     const pageBreak = Decoration.mark({ class: "page-break" });
@@ -259,9 +260,16 @@ class FountainEditorPlugin implements PluginValue {
           case "dialogue":
             builder.add(
               el.characterRange.start,
-              el.characterExtensionsRange.end,
-              character,
+              el.characterRange.end,
+              characterName,
             );
+            if (el.characterExtensionsRange.start !== el.characterExtensionsRange.end) {
+              builder.add(
+                el.characterExtensionsRange.start,
+                el.characterExtensionsRange.end,
+                characterExtension,
+              );
+            }
             if (el.caretRange) {
               builder.add(
                 el.caretRange.start,
