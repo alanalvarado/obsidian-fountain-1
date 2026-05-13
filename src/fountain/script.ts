@@ -17,6 +17,7 @@ import {
   maybeEscapeLeadingSpaces,
   mergeConsecutiveActions,
 } from "./utils";
+import { calculateMetrics } from "./metrics";
 
 export class FountainScript {
   readonly titlePage: TitlePage | null;
@@ -185,12 +186,28 @@ export class FountainScript {
     }
     flushSection();
 
+    // Calculate script-wide metrics
+    const metrics = calculateMetrics(mainElements, this.document);
+
+    // Calculate scene-specific metrics
+    for (const section of sections) {
+      for (const scene of section.content) {
+        // We use el.range to identify the full scene content
+        // For simplicity in this implementation, we re-calculate from the elements in the scene
+        const sceneElements: FountainElement[] = [];
+        if (scene.scene) sceneElements.push(scene.scene);
+        sceneElements.push(...scene.content);
+        (scene as any)._metrics = calculateMetrics(sceneElements, this.document);
+      }
+    }
+
     return {
       sections,
       snippets: this.parseSnippets(snippetElements),
       characters: Array.from(this.characterStats.entries())
         .map(([name, dialogueCount]) => ({ name, dialogueCount }))
         .sort((a, b) => b.dialogueCount - a.dialogueCount),
+      metrics,
     };
   }
 
@@ -203,7 +220,9 @@ export class FountainScript {
       (fe) =>
         fe.kind === "section" &&
         fe.depth <= 3 &&
-        this.sliceDocument(fe.range).toLowerCase().includes("snippets"),
+        this.sliceDocument((fe as any).textRange || fe.range)
+          .toLowerCase()
+          .trim() === "snippets",
     );
     if (idx === -1) return [this.script, []];
     return [this.script.slice(0, idx), this.script.slice(idx + 1)];

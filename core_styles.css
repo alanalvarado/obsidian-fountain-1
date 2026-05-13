@@ -1346,5 +1346,108 @@
 	border-bottom: 2px solid var(--interactive-accent);
 }
 
+/* The Pulse - Metrics Dashboard */
+.metrics-section {
+	background-color: var(--background-secondary);
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 12px;
+	border: 1px solid var(--background-modifier-border);
+}
 
+.metrics-header {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-faint);
+	letter-spacing: 0.15em;
+	margin-bottom: 10px;
+	text-align: center;
+}
 
+.metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.metric-item {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.metric-label {
+	font-size: 9px;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+.metric-value {
+	font-family: var(--font-monospace);
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--interactive-accent);
+}
+
+.metric-value.small {
+	font-size: 13px;
+	line-height: 24px;
+}
+
+.balance-container {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.balance-bar {
+	height: 6px;
+	width: 100%;
+	border-radius: 3px;
+	overflow: hidden;
+	display: flex;
+	background-color: var(--background-modifier-border);
+}
+
+.balance-fill {
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.balance-fill.dialogue {
+	background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.balance-fill.action {
+	background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.balance-labels {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.label-dialogue { color: #818cf8; }
+.label-action { color: #f59e0b; }
+
+/* TOC Enhancements */
+.scene-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.scene-length {
+	font-family: var(--font-monospace);
+	font-size: 10px;
+	color: var(--text-faint);
+	white-space: nowrap;
+	flex-shrink: 0;
+}

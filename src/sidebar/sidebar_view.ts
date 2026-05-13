@@ -9,6 +9,7 @@ import {
   dataRange,
   extractNotes,
 } from "../fountain";
+import { formatDuration, formatEighths } from "../fountain/metrics";
 import { FountainView } from "../views/fountain_view";
 import { renderElement } from "../views/reading_view";
 import { getScenePreview } from "../views/render_tools";
@@ -47,6 +48,63 @@ abstract class SidebarSection {
     isEditMode: boolean,
     path: string,
   ): void;
+}
+
+class MetricsSection extends SidebarSection {
+  render(
+    container: HTMLElement,
+    script: FountainScript,
+    _isEditMode: boolean,
+    _path: string,
+  ): void {
+    const structure = script.structure();
+    const m = structure.metrics;
+
+    container.createDiv({ cls: "metrics-section" }, (div) => {
+      div.createDiv({ cls: "metrics-header", text: "THE PULSE" });
+
+      div.createDiv({ cls: "metrics-grid" }, (grid) => {
+        grid.createDiv({ cls: "metric-item" }, (item) => {
+          item.createDiv({ cls: "metric-label", text: "PAGES" });
+          item.createDiv({ cls: "metric-value", text: formatEighths(m.pageCount).replace(" pg", "") });
+        });
+        grid.createDiv({ cls: "metric-item" }, (item) => {
+          item.createDiv({ cls: "metric-label", text: "RUNTIME" });
+          item.createDiv({ cls: "metric-value", text: formatDuration(m.durationSeconds) });
+        });
+        grid.createDiv({ cls: "metric-item" }, (item) => {
+          item.createDiv({ cls: "metric-label", text: "WORDS" });
+          item.createDiv({
+            cls: "metric-value small",
+            text: m.wordCount.toLocaleString(),
+          });
+        });
+      });
+
+      // Balance bar
+      div.createDiv({ cls: "balance-container" }, (balance) => {
+        balance.createDiv({
+          cls: "balance-bar",
+          attr: {
+            title: `Dialogue: ${m.dialoguePercent}% | Action: ${m.actionPercent}%`,
+          },
+        }, (bar) => {
+          bar.createDiv({
+            cls: "balance-fill dialogue",
+            attr: { style: `width: ${m.dialoguePercent}%` },
+          });
+          bar.createDiv({
+            cls: "balance-fill action",
+            attr: { style: `width: ${m.actionPercent}%` },
+          });
+        });
+        balance.createDiv({ cls: "balance-labels" }, (labels) => {
+          labels.createSpan({ cls: "label-dialogue", text: "Dialogue" });
+          labels.createSpan({ cls: "label-action", text: "Action" });
+        });
+      });
+    });
+  }
 }
 
 class SnippetsSection extends SidebarSection {
@@ -307,7 +365,11 @@ class TocSection extends SidebarSection {
           const el_scene = el.scene;
           const d = s.createDiv({
             cls: "scene-heading",
-            text: el_scene.heading,
+          });
+          d.createSpan({ text: el_scene.heading });
+          d.createSpan({
+            cls: "scene-length",
+            text: formatEighths(el.metrics.pageCount),
           });
           this.installTocDragAndDropHandlers(path, this.callbacks, d, el.range);
           d.addEventListener("click", (evt: Event) => {
@@ -495,6 +557,7 @@ export class FountainSideBarView extends ItemView {
     };
 
     this.sections = [
+      new MetricsSection(callbacks),
       new TocSection(callbacks),
       new CharactersSection(callbacks),
       new SnippetsSection(callbacks),
@@ -643,7 +706,11 @@ export class FountainSideBarView extends ItemView {
           const isEditMode = ft.isEditMode();
           const path = ft.file.path;
           for (const section of this.sections) {
-            section.render(sidebarDiv, script, isEditMode, path);
+            try {
+              section.render(sidebarDiv, script, isEditMode, path);
+            } catch (e) {
+              console.error("Fountain: Error rendering sidebar section", e);
+            }
           }
         }
       }

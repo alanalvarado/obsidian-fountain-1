@@ -264,10 +264,20 @@ export interface CharacterStats {
   dialogueCount: number;
 }
 
+export interface ScriptMetrics {
+  pageCount: number;
+  wordCount: number;
+  characterCount: number;
+  durationSeconds: number;
+  dialoguePercent: number;
+  actionPercent: number;
+}
+
 export interface ScriptStructure {
   sections: StructureSection[];
   snippets: Snippets;
   characters: CharacterStats[];
+  metrics: ScriptMetrics;
 }
 
 // ============================================================================
@@ -348,5 +358,17 @@ export class StructureScene {
       this.content[0]?.range,
       this.content[this.content.length - 1]?.range,
     );
+  }
+
+  get metrics(): ScriptMetrics {
+    // This will be calculated in metrics.ts but cached/exposed here
+    return (this as any)._metrics || {
+      pageCount: 0,
+      wordCount: 0,
+      characterCount: 0,
+      durationSeconds: 0,
+      dialoguePercent: 0,
+      actionPercent: 0,
+    };
   }
 }
