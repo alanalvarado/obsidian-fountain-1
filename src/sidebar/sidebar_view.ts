@@ -24,6 +24,14 @@ interface SidebarCallbacks {
   insertAfterSnippetsHeader: (text: string) => void;
   toggleSpotlight: (character: string) => void;
   getSpotlightCharacter: () => string | null;
+  moveSceneAcross: (args: {
+    srcPath: string;
+    srcRange: Range;
+    dstPath: string;
+    dstPos: number;
+  }) => void;
+  reRender: () => void;
+  requestSave: () => void;
 }
 
 abstract class SidebarSection {
@@ -37,6 +45,7 @@ abstract class SidebarSection {
     container: HTMLElement,
     script: FountainScript,
     isEditMode: boolean,
+    path: string,
   ): void;
 }
 
@@ -45,6 +54,7 @@ class SnippetsSection extends SidebarSection {
     container: HTMLElement,
     script: FountainScript,
     isEditMode: boolean,
+    path: string,
   ): void {
     const structure = script.structure();
     const hasSnippets = structure.snippets && structure.snippets.length > 0;
@@ -185,6 +195,7 @@ class TocSection extends SidebarSection {
     container: HTMLElement,
     script: FountainScript,
     _isEditMode: boolean,
+    path: string,
   ): void {
     container.createDiv({ cls: "toc-section" }, (sectionDiv) => {
       sectionDiv.createDiv({ cls: "screenplay-toc" }, (div) => {
@@ -240,7 +251,7 @@ class TocSection extends SidebarSection {
         });
 
         for (const section of script.structure().sections) {
-          this.renderTocSection(div, script, section);
+          this.renderTocSection(div, script, section, path);
         }
 
         if (!this.showSynopsis) {
@@ -277,6 +288,7 @@ class TocSection extends SidebarSection {
     parent: HTMLElement,
     script: FountainScript,
     section: StructureSection,
+    path: string,
   ) {
     parent.createEl("section", {}, (s) => {
       if (section.section) {
@@ -297,6 +309,7 @@ class TocSection extends SidebarSection {
             cls: "scene-heading",
             text: el_scene.heading,
           });
+          this.installTocDragAndDropHandlers(path, this.callbacks, d, el.range);
           d.addEventListener("click", (evt: Event) => {
             this.callbacks.scrollToRange(el_scene.range);
           });
@@ -334,6 +347,82 @@ class TocSection extends SidebarSection {
       }
     });
   }
+
+  private installTocDragAndDropHandlers(
+    path: string,
+    callbacks: SidebarCallbacks,
+    sceneEl: HTMLElement,
+    range: Range,
+  ) {
+    sceneEl.draggable = true;
+    sceneEl.addEventListener("dragstart", (evt: DragEvent) => {
+      if (!evt.dataTransfer) return;
+      evt.dataTransfer.clearData();
+      evt.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({ path: path, range: range }),
+      );
+      evt.dataTransfer.effectAllowed = "move";
+      sceneEl.classList.add("dragging");
+    });
+
+    sceneEl.addEventListener("dragend", () => {
+      sceneEl.classList.remove("dragging");
+      this.clearTocDropIndicators();
+    });
+
+    sceneEl.addEventListener("dragover", (evt: DragEvent) => {
+      evt.preventDefault();
+      if (sceneEl.classList.contains("dragging")) return;
+
+      const rect = sceneEl.getBoundingClientRect();
+      const relativeY = evt.clientY - rect.top;
+      const isAbove = relativeY < rect.height / 2;
+
+      this.clearTocDropIndicators();
+      if (isAbove) {
+        sceneEl.classList.add("drop-above");
+      } else {
+        sceneEl.classList.add("drop-below");
+      }
+    });
+
+    sceneEl.addEventListener("dragleave", () => {
+      sceneEl.classList.remove("drop-above");
+      sceneEl.classList.remove("drop-below");
+    });
+
+    sceneEl.addEventListener("drop", (evt: DragEvent) => {
+      evt.preventDefault();
+      const isAbove = sceneEl.classList.contains("drop-above");
+      const isBelow = sceneEl.classList.contains("drop-below");
+      this.clearTocDropIndicators();
+      if (!isAbove && !isBelow) return;
+
+      const json = evt.dataTransfer?.getData("application/json");
+      if (!json) return;
+      const dragData = JSON.parse(json);
+
+      // No-op if dropping on itself
+      if (dragData.path === path && dragData.range.start === range.start) return;
+
+      callbacks.moveSceneAcross({
+        srcPath: dragData.path,
+        srcRange: dragData.range,
+        dstPath: path,
+        dstPos: isAbove ? range.start : range.end,
+      });
+      callbacks.requestSave();
+      callbacks.reRender();
+    });
+  }
+
+  private clearTocDropIndicators() {
+    for (const el of document.querySelectorAll(".drop-above, .drop-below")) {
+      el.classList.remove("drop-above");
+      el.classList.remove("drop-below");
+    }
+  }
 }
 
 class CharactersSection extends SidebarSection {
@@ -341,6 +430,7 @@ class CharactersSection extends SidebarSection {
     container: HTMLElement,
     script: FountainScript,
     _isEditMode: boolean,
+    path: string,
   ): void {
     const structure = script.structure();
     const characters = structure.characters;
@@ -399,6 +489,9 @@ export class FountainSideBarView extends ItemView {
         this.insertAfterSnippetsHeader(text),
       toggleSpotlight: (character: string) => this.toggleSpotlight(character),
       getSpotlightCharacter: () => this.theFountainView()?.spotlightCharacter() ?? null,
+      moveSceneAcross: (args) => this.moveSceneAcross(args),
+      reRender: () => this.render(),
+      requestSave: () => this.app.workspace.requestSaveLayout(),
     };
 
     this.sections = [
@@ -435,6 +528,18 @@ export class FountainSideBarView extends ItemView {
 
   getIcon(): string {
     return "list-tree";
+  }
+
+  private moveSceneAcross(args: {
+    srcPath: string;
+    srcRange: Range;
+    dstPath: string;
+    dstPos: number;
+  }) {
+    const views = findFountainViewsForPath(this.app, args.dstPath);
+    if (views.length > 0) {
+      views[0].moveSceneAcross(args);
+    }
   }
 
   async onload(): Promise<void> {
@@ -536,8 +641,9 @@ export class FountainSideBarView extends ItemView {
         const script = ft.getScript();
         if (!("error" in script)) {
           const isEditMode = ft.isEditMode();
+          const path = ft.file.path;
           for (const section of this.sections) {
-            section.render(sidebarDiv, script, isEditMode);
+            section.render(sidebarDiv, script, isEditMode, path);
           }
         }
       }
