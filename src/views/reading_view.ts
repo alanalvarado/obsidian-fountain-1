@@ -56,15 +56,19 @@ function renderDialogueInner(
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
   // Character line (including extensions)
+  const isSpotlighted = spotlightCharacter && script.charactersOf(dialogue).includes(spotlightCharacter);
+  const characterClasses = ["dialogue-character", ...(spotlightCharacter && !isSpotlighted ? ["dimmed"] : []), ...(isSpotlighted ? ["spotlight"] : [])];
+
   parent.createDiv(
     {
       attr: dataRange(dialogue.characterRange),
     },
     (div) => {
       div.createEl("h4", {
-        cls: "dialogue-character",
+        cls: characterClasses,
         text: script.sliceDocument({
           start: dialogue.characterRange.start,
           end: dialogue.characterExtensionsRange.end,
@@ -72,11 +76,14 @@ function renderDialogueInner(
       });
     },
   );
-  const classes =
-    blackoutCharacter &&
-    script.charactersOf(dialogue).includes(blackoutCharacter)
-      ? ["blackout", "dialogue-words"]
-      : ["dialogue-words"];
+  const classes = ["dialogue-words"];
+  if (blackoutCharacter && script.charactersOf(dialogue).includes(blackoutCharacter)) {
+    classes.push("blackout");
+  }
+  if (spotlightCharacter && !isSpotlighted) {
+    classes.push("dimmed");
+  }
+
   for (const item of dialogue.content) {
     if (item.kind === "parenthetical") {
       parent.createDiv(
@@ -85,7 +92,7 @@ function renderDialogueInner(
         },
         (div) => {
           div.createDiv({
-            cls: "dialogue-parenthetical",
+            cls: ["dialogue-parenthetical", ...(spotlightCharacter && !isSpotlighted ? ["dimmed"] : [])],
             text: script.sliceDocument(item.range),
           });
         },
@@ -102,8 +109,9 @@ function renderDialogue(
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
-  renderDialogueInner(parent, dialogue, script, settings, blackoutCharacter);
+  renderDialogueInner(parent, dialogue, script, settings, blackoutCharacter, spotlightCharacter);
   renderBlankLine(parent, dialogue.range);
 }
 
@@ -114,6 +122,7 @@ function renderDualDialogue(
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
   parent.createDiv(
     {
@@ -127,7 +136,7 @@ function renderDualDialogue(
           attr: dataRange(left.range),
         },
         (col) => {
-          renderDialogueInner(col, left, script, settings, blackoutCharacter);
+          renderDialogueInner(col, left, script, settings, blackoutCharacter, spotlightCharacter);
         },
       );
       container.createDiv(
@@ -136,7 +145,7 @@ function renderDualDialogue(
           attr: dataRange(right.range),
         },
         (col) => {
-          renderDialogueInner(col, right, script, settings, blackoutCharacter);
+          renderDialogueInner(col, right, script, settings, blackoutCharacter, spotlightCharacter);
         },
       );
     },
@@ -217,6 +226,7 @@ function renderElement(
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
   switch (el.kind) {
     case "action":
@@ -289,7 +299,7 @@ function renderElement(
       }
       break;
     case "dialogue":
-      renderDialogue(parent, el, script, settings, blackoutCharacter);
+      renderDialogue(parent, el, script, settings, blackoutCharacter, spotlightCharacter);
       break;
     case "transition":
       {
@@ -321,6 +331,7 @@ function renderContent(
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
   const elements = script.script;
   for (let i = 0; i < elements.length; i++) {
@@ -335,12 +346,13 @@ function renderContent(
           script,
           settings,
           blackoutCharacter,
+          spotlightCharacter,
         );
         i++;
         continue;
       }
     }
-    renderElement(parent, el, script, settings, blackoutCharacter);
+    renderElement(parent, el, script, settings, blackoutCharacter, spotlightCharacter);
   }
 }
 
@@ -377,12 +389,14 @@ function renderTitlePage(parent: HTMLElement, script: FountainScript): void {
  * @param script the document to render
  * @param settings
  * @param blackoutCharacter if given this characters dialogue is blacked out.
+ * @param spotlightCharacter if given other characters are dimmed.
  */
 function renderFountain(
   parent: HTMLElement,
   script: FountainScript,
   settings: ShowHideSettings,
   blackoutCharacter?: string,
+  spotlightCharacter?: string,
 ): void {
   // Use filtered script to ensure consistent behavior and eliminate unwanted newlines
   const filteredScript = script.withHiddenElementsRemoved({
@@ -392,7 +406,7 @@ function renderFountain(
   });
 
   renderTitlePage(parent, script); // Title page uses original script
-  renderContent(parent, filteredScript, settings, blackoutCharacter);
+  renderContent(parent, filteredScript, settings, blackoutCharacter, spotlightCharacter);
 }
 
 /// Return the range of the first visible line on the screen. Or something close.

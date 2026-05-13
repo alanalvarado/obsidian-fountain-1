@@ -46,6 +46,7 @@ export type Rehearsal = {
 export type ReadonlyViewPersistedState = {
   mode: ShowMode;
   rehearsal?: Rehearsal; // This misses which dialogue(s) have been revealed, but is cheap and good enough
+  spotlight?: string;
 } & ShowHideSettings;
 
 /**
@@ -83,6 +84,7 @@ export interface ViewState {
   setSpellCheck(enabled: boolean): void;
   hasSelection(): boolean;
   blackoutCharacter(): string | null;
+  spotlightCharacter(): string | null;
   rangeOfFirstVisibleLine(): Range | null;
 }
 

@@ -259,9 +259,15 @@ export interface Snippet {
 }
 export type Snippets = Snippet[];
 
+export interface CharacterStats {
+  name: string;
+  dialogueCount: number;
+}
+
 export interface ScriptStructure {
   sections: StructureSection[];
   snippets: Snippets;
+  characters: CharacterStats[];
 }
 
 // ============================================================================

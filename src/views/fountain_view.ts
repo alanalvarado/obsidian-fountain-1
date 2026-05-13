@@ -448,6 +448,25 @@ export class FountainView extends TextFileView {
     }
   }
 
+  startSpotlightMode(character: string) {
+    this.switchToReadonlyMode();
+    if (this.state instanceof ReadonlyViewState) {
+      this.state.startSpotlightMode(character);
+      this.app.workspace.requestSaveLayout();
+    }
+  }
+
+  public spotlightCharacter(): string | null {
+    return this.state.spotlightCharacter();
+  }
+
+  public stopSpotlightMode() {
+    if (this.state instanceof ReadonlyViewState) {
+      this.state.stopSpotlightMode();
+      this.app.workspace.requestSaveLayout();
+    }
+  }
+
   /** User-typed edit in this view's CM editor — propagate the reparsed
    *  script to every sibling view open on this file. */
   onUserEdit(newScript: FountainScript) {
@@ -724,6 +743,9 @@ export class FountainView extends TextFileView {
           this.state.setPersistentState(state);
           if (state.rehearsal) {
             this.startRehearsalMode(state.rehearsal.character);
+          }
+          if (state.spotlight) {
+            this.startSpotlightMode(state.spotlight);
           }
         }
       }

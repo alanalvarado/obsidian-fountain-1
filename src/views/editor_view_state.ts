@@ -239,6 +239,10 @@ export class EditorViewState implements ViewState {
   blackoutCharacter(): string | null {
     return null;
   }
+
+  spotlightCharacter(): string | null {
+    return null;
+  }
   render(): void {}
 
   rangeOfFirstVisibleLine(): Range | null {

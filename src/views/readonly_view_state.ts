@@ -65,6 +65,22 @@ export class ReadonlyViewState implements ViewState {
     return this.blackout;
   }
 
+  public stopSpotlightMode() {
+    if (!this.pstate.spotlight) return;
+    this.pstate = { ...this.pstate, spotlight: undefined };
+    this.render();
+  }
+
+  startSpotlightMode(character: string) {
+    this.pstate = { ...this.pstate, spotlight: character };
+    this.render();
+  }
+
+  /** Is spotlight mode active and for which character? */
+  public spotlightCharacter(): string | null {
+    return this.pstate.spotlight ?? null;
+  }
+
   private toggleBlackoutHandler(evt: Event) {
     const target = evt.target as HTMLElement;
     target.classList.toggle("blackout");
@@ -101,7 +117,7 @@ export class ReadonlyViewState implements ViewState {
         const settings: ShowHideSettings = this.blackout
           ? { hideBoneyard: true, hideNotes: true, hideSynopsis: true }
           : this.pstate;
-        renderFountain(mainblock, fp, settings, this.blackout ?? undefined);
+        renderFountain(mainblock, fp, settings, this.blackout ?? undefined, this.pstate.spotlight);
         break;
       }
     }

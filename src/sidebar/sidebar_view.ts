@@ -22,6 +22,8 @@ interface SidebarCallbacks {
   /** Read text from any fountain file (open or not) at the given range. */
   readFromFile: (path: string, range: Range) => Promise<string | null>;
   insertAfterSnippetsHeader: (text: string) => void;
+  toggleSpotlight: (character: string) => void;
+  getSpotlightCharacter: () => string | null;
 }
 
 abstract class SidebarSection {
@@ -334,6 +336,48 @@ class TocSection extends SidebarSection {
   }
 }
 
+class CharactersSection extends SidebarSection {
+  render(
+    container: HTMLElement,
+    script: FountainScript,
+    _isEditMode: boolean,
+  ): void {
+    const structure = script.structure();
+    const characters = structure.characters;
+    if (characters.length === 0) return;
+
+    container.createDiv({ cls: "characters-section" }, (sectionDiv) => {
+      sectionDiv.addClass("screenplay-characters");
+
+      sectionDiv.createEl("div", {
+        text: "Characters",
+        cls: "characters-instruction",
+      });
+
+      const activeChar = this.callbacks.getSpotlightCharacter();
+
+      for (const char of characters) {
+        sectionDiv.createDiv(
+          {
+            cls: ["character-stat", ...(activeChar === char.name ? ["active"] : [])],
+          },
+          (charDiv) => {
+            charDiv.createSpan({ cls: "char-name", text: char.name });
+            charDiv.createSpan({
+              cls: "char-count",
+              text: `${char.dialogueCount}`,
+            });
+
+            charDiv.addEventListener("click", () => {
+              this.callbacks.toggleSpotlight(char.name);
+            });
+          },
+        );
+      }
+    });
+  }
+}
+
 // TODO: In an ideal world, instead of registering an additional view, we
 // would take over the normal outline view (so that for markdown views the
 // regular outline view does its job but for foutainview's our view does
@@ -353,9 +397,15 @@ export class FountainSideBarView extends ItemView {
         this.readFromFile(path, range),
       insertAfterSnippetsHeader: (text: string) =>
         this.insertAfterSnippetsHeader(text),
+      toggleSpotlight: (character: string) => this.toggleSpotlight(character),
+      getSpotlightCharacter: () => this.theFountainView()?.spotlightCharacter() ?? null,
     };
 
-    this.sections = [new TocSection(callbacks), new SnippetsSection(callbacks)];
+    this.sections = [
+      new TocSection(callbacks),
+      new CharactersSection(callbacks),
+      new SnippetsSection(callbacks),
+    ];
   }
 
   /** Read a slice of text from `path`, preferring an open FountainView's
@@ -461,6 +511,18 @@ export class FountainSideBarView extends ItemView {
       const snippetsSection = `\n\n# Boneyard\n# Snippets\n${text}`;
       ft.replaceText({ start: docLength, end: docLength }, snippetsSection);
     }
+  }
+
+  private toggleSpotlight(character: string) {
+    const ft = this.theFountainView();
+    if (!ft) return;
+
+    if (ft.spotlightCharacter() === character) {
+      ft.stopSpotlightMode();
+    } else {
+      ft.startSpotlightMode(character);
+    }
+    this.render();
   }
 
   private render() {

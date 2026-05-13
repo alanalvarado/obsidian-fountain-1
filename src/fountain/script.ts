@@ -23,6 +23,7 @@ export class FountainScript {
   readonly script: FountainElement[];
   readonly document: string;
   readonly allCharacters: Set<string>;
+  readonly characterStats: Map<string, number>;
 
   constructor(
     document: string,
@@ -33,11 +34,13 @@ export class FountainScript {
     this.titlePage = titlePage;
     this.script = applyDualPairing(mergeConsecutiveActions(script));
     const characters = new Set<string>();
+    const stats = new Map<string, number>();
     for (const el of this.script) {
       switch (el.kind) {
         case "dialogue":
           for (const c of this.charactersOf(el)) {
             characters.add(c);
+            stats.set(c, (stats.get(c) || 0) + 1);
           }
           break;
         default:
@@ -45,6 +48,7 @@ export class FountainScript {
       }
     }
     this.allCharacters = characters;
+    this.characterStats = stats;
   }
 
   /** Extract text from the fountain document. */
@@ -184,6 +188,9 @@ export class FountainScript {
     return {
       sections,
       snippets: this.parseSnippets(snippetElements),
+      characters: Array.from(this.characterStats.entries())
+        .map(([name, dialogueCount]) => ({ name, dialogueCount }))
+        .sort((a, b) => b.dialogueCount - a.dialogueCount),
     };
   }
 
