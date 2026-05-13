@@ -36,6 +36,7 @@ class FountainEditorPlugin implements PluginValue {
   private centered: Decoration;
   private dualMarkerValid: Decoration;
   private dualMarkerInvalid: Decoration;
+  private wordsLine: Decoration;
 
   constructor(view: EditorView) {
     this.bold = Decoration.mark({ class: "bold" });
@@ -55,6 +56,10 @@ class FountainEditorPlugin implements PluginValue {
     this.dualMarkerInvalid = Decoration.mark({
       class: "dialogue-dual-marker-invalid",
     });
+    // Line-level decoration for dialogue words: applied to the .cm-line
+    // element so that block CSS (max-width) can constrain text wrapping,
+    // which inline mark spans cannot do.
+    this.wordsLine = Decoration.line({ class: "dialogue-words-line" });
     this.decorations = this.buildDecorations(view);
   }
 
@@ -198,6 +203,13 @@ class FountainEditorPlugin implements PluginValue {
                   parenthetical,
                 );
               } else {
+                // Emit line-level decoration first (from === to, at line
+                // start) so the .cm-line gets the dialogue-words-line class
+                // which allows max-width CSS to constrain wrapping.
+                const lineStart = view.state.doc.lineAt(
+                  item.line.range.start,
+                ).from;
+                builder.add(lineStart, lineStart, this.wordsLine);
                 builder.add(
                   item.line.range.start,
                   item.line.range.end,

@@ -29,11 +29,13 @@
 	word-break: normal;
 	user-select: text !important;
 	-webkit-user-select: text !important;
+	white-space: pre-wrap !important;
 }
 
 .screenplay .fountain-line {
 	margin: 0 !important;
 	padding: 0 !important;
+	line-height: inherit !important;
 }
 
 
@@ -145,9 +147,9 @@
 .screenplay.cm-editor .cm-line {
 	width: 100% !important;
 	max-width: 100% !important;
-	padding-left: 0 !important;
-	padding-right: 0 !important;
+	padding: 0 !important;
 	margin: 0 !important;
+	line-height: inherit !important;
 }
 
 /* Position the gutter in the left margin */
@@ -214,6 +216,15 @@
 	break-before: avoid-page;
 }
 
+/* Editor-mode counterpart: the .cm-line gets this class via Decoration.line()
+   so block-level CSS (max-width) can constrain wrapping exactly like the
+   reading-mode .dialogue-words div does. */
+.screenplay.cm-editor .cm-line.dialogue-words-line {
+	padding-left: 1.5in;
+	max-width: calc(1.5in + 34ch);
+	box-sizing: border-box;
+}
+
 /* On the phone we don't need number of lines on the screen to
    match those of the printed product. We just need something
    readable where a human still visually recognises what is what.
@@ -227,6 +238,13 @@
 	margin: 0.5in;
 	width: calc(100% - 1in);
 	max-width: calc(100% - 1in);
+}
+
+/* Phone editor-mode: match reading-mode phone geometry for dialogue-words-line */
+.is-phone .screenplay.cm-editor .cm-line.dialogue-words-line {
+	padding-left: 0.45in;
+	max-width: calc(100% - 0.55in);
+	box-sizing: border-box;
 }
 
 /* prevents  a page break from interrupting dialogue */
