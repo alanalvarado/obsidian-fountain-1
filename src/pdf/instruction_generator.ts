@@ -374,8 +374,8 @@ function generateTitlePageInstructions(
     "authors",
     "source",
   ]);
-  const lowerLeftKeys = new Set(["contact"]);
-  const lowerRightKeys = new Set(["draft date"]);
+  const lowerLeftKeys = new Set(["contact", "draft date"]);
+  const lowerRightKeys = new Set([]);
 
   const centeredElements: { key: string; values: StyledText[] }[] = [];
   const lowerLeftElements: { key: string; values: StyledText[] }[] = [];
@@ -519,6 +519,16 @@ function generateLowerLeftTitleElementInstructions(
   let currentY = pageState.margins.bottom;
 
   for (const element of elements) {
+    // Show the key for lower-left elements (Draft date, etc.)
+    let x = pageState.margins.left;
+    x = emitText(instructions, { ...pageState, currentY }, {
+      data: `${element.key}: `,
+      x,
+      bold: false,
+      italic: false,
+      underline: false,
+    });
+
     for (const styledText of element.values) {
       const segments = extractStyledSegments(
         styledText,
@@ -532,16 +542,16 @@ function generateLowerLeftTitleElementInstructions(
       );
 
       for (const line of wrappedLines) {
-        let x = pageState.margins.left;
+        let valX = x; // Start values after the key for the first line
 
         for (const segment of line.segments) {
           if (segment.text.length > 0) {
-            x = emitText(
+            valX = emitText(
               instructions,
               { ...pageState, currentY },
               {
                 data: segment.text,
-                x,
+                x: valX,
                 bold: segment.bold || false,
                 italic: segment.italic || false,
                 underline: segment.underline || false,
@@ -554,6 +564,7 @@ function generateLowerLeftTitleElementInstructions(
         }
 
         currentY += pageState.lineHeight; // Move up from bottom
+        x = pageState.margins.left; // Subsequent lines of same value start at margin
       }
     }
 

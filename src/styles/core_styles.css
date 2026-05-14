@@ -39,6 +39,52 @@
 	line-height: inherit !important;
 }
 
+/* Title Page Styles */
+.screenplay .fountain-title-page {
+	display: flex;
+	flex-direction: column;
+	min-height: calc(11in - 2in); /* Full page height minus padding */
+	justify-content: space-between;
+	align-items: center;
+	position: relative;
+	margin-bottom: 2em;
+	text-align: center;
+}
+
+.screenplay .title-page-group-centered {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	flex-grow: 1;
+	width: 100%;
+}
+
+.screenplay .title-page-group-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	text-align: left;
+	margin-top: 2em;
+}
+
+.screenplay .title-page-value {
+	margin-bottom: 0.5em;
+}
+
+.screenplay .title-page-title {
+	font-weight: bold;
+	text-decoration: underline;
+	font-size: 1.2em;
+	margin-bottom: 1em;
+}
+
+.screenplay .title-page-contact,
+.screenplay .title-page-draft-date {
+	margin-top: 0.2em;
+}
+
 
 
 /* TOC uses UI font for better readability in sidebar */

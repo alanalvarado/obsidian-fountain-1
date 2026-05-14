@@ -391,25 +391,43 @@ function renderTitlePage(parent: HTMLElement, script: FountainScript): void {
   const titlePage = script.titlePage;
   if (titlePage === null) return;
 
-  for (const kv of titlePage.keyValues) {
-    if (kv.values.length === 1) {
-      parent.createDiv({}, (div) => {
-        div.appendText(`${kv.key}: `);
-        styledTextToHtml(script, div, kv.values[0], {}, true);
-      });
-    } else {
-      parent.createDiv({ text: `${kv.key}: ` });
-      for (const v of kv.values) {
-        parent.createDiv({}, (div) => {
-          div.appendText(INDENT);
-          styledTextToHtml(script, div, v, {}, true);
-        });
+  const centeredKeys = new Set(["title", "credit", "author", "authors", "source"]);
+  const bottomKeys = new Set(["contact", "draft date"]);
+
+  parent.createDiv({ cls: "fountain-title-page" }, (container) => {
+    // Top/Center Group
+    container.createDiv({ cls: "title-page-group-centered" }, (centeredGroup) => {
+      for (const kv of titlePage.keyValues) {
+        const keyLower = kv.key.toLowerCase();
+        if (centeredKeys.has(keyLower)) {
+          const isTitle = keyLower === "title";
+          for (const v of kv.values) {
+            centeredGroup.createDiv({ cls: isTitle ? "title-page-title" : "title-page-value" }, (div) => {
+              styledTextToHtml(script, div, v, {}, true);
+            });
+          }
+        }
       }
-    }
-  }
-  renderBlankLine(parent);
-  parent.createEl("hr");
-  renderBlankLine(parent);
+    });
+
+    // Bottom Group
+    container.createDiv({ cls: "title-page-group-bottom" }, (bottomGroup) => {
+      for (const kv of titlePage.keyValues) {
+        const keyLower = kv.key.toLowerCase();
+        if (bottomKeys.has(keyLower)) {
+          bottomGroup.createDiv({ cls: `title-page-${keyLower.replace(" ", "-")}` }, (div) => {
+            div.createSpan({ cls: "title-page-key", text: `${kv.key}: ` });
+            for (let i = 0; i < kv.values.length; i++) {
+              if (i > 0) div.createEl("br");
+              styledTextToHtml(script, div, kv.values[i], {}, true);
+            }
+          });
+        }
+      }
+    });
+  });
+
+  parent.createEl("hr", { cls: "title-page-separator" });
 }
 
 /**
