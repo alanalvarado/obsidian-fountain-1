@@ -1249,7 +1249,7 @@ describe("Dual dialogue (caret marker)", () => {
         second.characterExtensionsRange.start,
         second.characterExtensionsRange.end,
       ),
-    ).toBe("(V.O.)");
+    ).toBe(" (V.O.)");
     expect(second.dual).toBe(true);
   });
 

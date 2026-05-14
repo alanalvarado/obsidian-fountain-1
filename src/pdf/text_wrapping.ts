@@ -52,12 +52,10 @@ export function prepareDialogueData(
     dialogue.characterExtensionsRange.start !==
     dialogue.characterExtensionsRange.end
   ) {
-    characterExtensions = fountainScript.document
-      .substring(
-        dialogue.characterExtensionsRange.start,
-        dialogue.characterExtensionsRange.end,
-      )
-      .trim();
+    characterExtensions = fountainScript.document.substring(
+      dialogue.characterExtensionsRange.start,
+      dialogue.characterExtensionsRange.end,
+    );
   }
 
 

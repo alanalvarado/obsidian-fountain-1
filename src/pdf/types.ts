@@ -133,7 +133,6 @@ export const CHARACTER_INDENT = 252; // 3.5" (1.5" + 2.0")
 export const DIALOGUE_INDENT = 180; // 2.5" (1.5" + 1.0")
 export const PARENTHETICAL_INDENT = 216; // 3.0" (1.5" + 1.5")
 export const TRANSITION_INDENT = 432; // 6.0" (1.5" + 4.5")
-export const EXTENSION_INDENT = 288; // 4.0" (1.5" + 2.5")
 
 // Dual-dialogue layout (industry standard: two columns, narrower per column)
 export const DUAL_LEFT_DIALOGUE_INDENT = 108; // 1.5" (left margin)

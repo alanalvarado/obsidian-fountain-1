@@ -186,7 +186,7 @@ NewLineOrEndOfInput
  / !.
 
 Dialogue
- = OptionalBlanks character:Character [ \t]* exts:CharacterExtensions
+ = OptionalBlanks character:Character exts:CharacterExtensions
    caret:DualMarker? "\n"
    content:DialogueContent
  { return mkDialogue(range(), character, exts, content, caret); }
@@ -218,7 +218,7 @@ MaybeName
  = [^ >\t\n] NameChar* { return text() }
 
 NameChar
- = !TrailingDualMarker !TrailingSpaceBeforeDualMarker [^(\n]
+ = !TrailingDualMarker !TrailingSpaceBeforeDualMarker !([ \t]* "(") [^(\n]
 
 // The caret marker forms a dual-dialogue indicator; we don't want to
 // pull it (or the whitespace immediately before it) into the character

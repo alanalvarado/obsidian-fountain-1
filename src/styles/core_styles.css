@@ -186,13 +186,7 @@
 }
 
 .screenplay.cm-editor .cm-line .dialogue-character-name {
-	display: inline-block;
 	padding-left: 2.0in;
-}
-
-.screenplay.cm-editor .cm-line .dialogue-character-extension {
-	display: inline-block;
-	padding-left: 0.5in;
 }
 
 .screenplay.cm-editor .cm-scroller {
@@ -261,9 +255,6 @@
 }
 
 .screenplay .dialogue-character-extension {
-	display: inline-block;
-	padding-left: 0.5in;
-	width: 1.0in;
 	white-space: nowrap;
 }
 

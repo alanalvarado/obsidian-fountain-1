@@ -50,7 +50,6 @@ import {
   DUAL_RIGHT_CHARACTER_INDENT,
   DUAL_RIGHT_DIALOGUE_INDENT,
   DUAL_RIGHT_PARENTHETICAL_INDENT,
-  EXTENSION_INDENT,
   FONT_SIZE,
   LINE_HEIGHT,
   MARGIN_LEFT,
@@ -1089,7 +1088,7 @@ function emitDialogueOnCurrentPage(
   let name = preparedDialogue.characterName;
   let exts = preparedDialogue.characterExtensions;
   if (preparedDialogue.contd) {
-    exts = exts ? `${exts} (CONT'D)` : "(CONT'D)";
+    exts = exts ? `${exts} (CONT'D)` : " (CONT'D)";
   }
 
   emitText(instructions, currentState, {
@@ -1107,7 +1106,7 @@ function emitDialogueOnCurrentPage(
   if (layout === SINGLE_LAYOUT && exts) {
     emitText(instructions, currentState, {
       data: exts,
-      x: EXTENSION_INDENT,
+      x: layout.characterX + name.length * getCharacterWidth(currentState.fontSize),
       bold: false,
       italic: false,
       underline: false,
