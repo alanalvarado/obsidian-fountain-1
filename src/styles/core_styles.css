@@ -9,7 +9,8 @@
 	--h6-font: var(--screenplay-font);
 	font-size: 12pt !important;
 	line-height: 1.1 !important;
-	-webkit-font-smoothing: antialiased;
+	font-weight: 400;
+	-webkit-font-smoothing: subpixel-antialiased;
 	text-rendering: optimizeLegibility;
 
 	/* Continuous Page Layout Settings */
@@ -1520,3 +1521,19 @@
 	color: var(--text-normal) !important;
 	opacity: 0.5;
 }
+
+/* PDF Export / Print Optimizations */
+@media print {
+	.screenplay {
+		color: #000 !important;
+		text-rendering: geometricPrecision;
+	}
+	
+	/* Ensure background is white for clean PDF */
+	.screenplay {
+		background-color: #fff !important;
+		box-shadow: none !important;
+		border: none !important;
+	}
+}
+

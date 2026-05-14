@@ -8,8 +8,8 @@ function buildStyles() {
 	if (!fs.existsSync("dist")) {
 		fs.mkdirSync("dist");
 	}
-	const fonts = fs.readFileSync("fonts.css", "utf8");
-	const core = fs.readFileSync("core_styles.css", "utf8");
+	const fonts = fs.readFileSync("src/styles/fonts.css", "utf8");
+	const core = fs.readFileSync("src/styles/core_styles.css", "utf8");
 	fs.writeFileSync("dist/styles.css", fonts + "\n" + core);
 	fs.copyFileSync("manifest.json", "dist/manifest.json");
 	console.log("Built dist/styles.css and dist/manifest.json");
@@ -63,7 +63,7 @@ if (prod) {
 } else {
 	buildStyles();
 	// Watch for CSS changes
-	fs.watch("fonts.css", buildStyles);
-	fs.watch("core_styles.css", buildStyles);
+	fs.watch("src/styles/fonts.css", buildStyles);
+	fs.watch("src/styles/core_styles.css", buildStyles);
 	await context.watch();
 }
