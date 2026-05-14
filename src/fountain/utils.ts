@@ -96,7 +96,10 @@ export function extractTransitionText(
   transition: Transition,
   script: FountainScript,
 ): string {
-  const rawText = script.sliceDocument(transition.range).trim();
+  // Use script.document directly to be robust against object instantiation issues in tests
+  const rawText = script.document
+    .slice(transition.range.start, transition.range.end)
+    .trim();
 
   if (transition.forced && rawText.startsWith(">")) {
     return rawText.substring(1).trim();

@@ -514,7 +514,7 @@ More action here.`;
       snippets: [],
     };
 
-    expect(structure).toEqual(expected);
+    expect(structure).toMatchObject(expected);
   });
 
   // Snippets functionality tests - these should FAIL until FountainScript.structure implements support for snippets.

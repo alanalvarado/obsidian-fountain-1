@@ -216,14 +216,12 @@ export class FountainScript {
    *  everything after to `snippet`. Returns `[script, []]` when there
    *  is no snippets section. */
   private splitOffSnippetsSection(): [FountainElement[], FountainElement[]] {
-    const idx = this.script.findIndex(
-      (fe) =>
-        fe.kind === "section" &&
-        fe.depth <= 3 &&
-        this.sliceDocument((fe as any).textRange || fe.range)
-          .toLowerCase()
-          .trim() === "snippets",
-    );
+    const idx = this.script.findIndex((fe) => {
+      if (fe.kind !== "section" || fe.depth > 3) return false;
+      const raw = this.sliceDocument(fe.range).toLowerCase().trim();
+      // Remove leading # if present in sliceDocument
+      return raw.replace(/^#+\s*/, "") === "snippets";
+    });
     if (idx === -1) return [this.script, []];
     return [this.script.slice(0, idx), this.script.slice(idx + 1)];
   }

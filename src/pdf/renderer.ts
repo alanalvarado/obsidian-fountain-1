@@ -2,13 +2,33 @@
  * Renders PDF instructions to an actual PDF document using pdf-lib.
  */
 
-import { PDFDocument, type PDFPage, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, type PDFPage, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import type { PDFOptions } from "./options_dialog";
 import {
   type Instruction,
   FONT_SIZE,
   rgbOfColor,
 } from "./types";
+import {
+  COURIER_PRIME_REGULAR,
+  COURIER_PRIME_BOLD,
+  COURIER_PRIME_ITALIC,
+  COURIER_PRIME_BOLD_ITALIC,
+} from "./fonts_data";
+
+/**
+ * Converts a Base64 string to a Uint8Array.
+ */
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
 
 /**
  * Executes instructions to create the final PDF document
@@ -21,18 +41,29 @@ export async function renderInstructionsToPDF(
     hideNotes: true,
     hideSynopsis: false,
     hideMarginMarks: false,
+    layoutPreset: "standard",
+    linesPerPage: 55,
   },
 ): Promise<PDFDocument> {
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
 
-  // Embed Courier font variants
-  const courierFont = await pdfDoc.embedFont(StandardFonts.Courier);
-  const courierBoldFont = await pdfDoc.embedFont(StandardFonts.CourierBold);
+  // Set document metadata
+  pdfDoc.setCreator("Obsidian Fountain Plugin");
+  pdfDoc.setProducer("Obsidian Fountain Plugin (via pdf-lib)");
+
+  // Embed Courier Prime font variants
+  const courierFont = await pdfDoc.embedFont(
+    base64ToUint8Array(COURIER_PRIME_REGULAR),
+  );
+  const courierBoldFont = await pdfDoc.embedFont(
+    base64ToUint8Array(COURIER_PRIME_BOLD),
+  );
   const courierObliqueFont = await pdfDoc.embedFont(
-    StandardFonts.CourierOblique,
+    base64ToUint8Array(COURIER_PRIME_ITALIC),
   );
   const courierBoldObliqueFont = await pdfDoc.embedFont(
-    StandardFonts.CourierBoldOblique,
+    base64ToUint8Array(COURIER_PRIME_BOLD_ITALIC),
   );
 
   let currentPage: PDFPage | null = null;
