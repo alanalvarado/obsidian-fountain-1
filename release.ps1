@@ -1,5 +1,5 @@
 # Parse latest changelog entry
-$changelogLines = Get-Content CHANGELOG.md
+$changelogLines = Get-Content CHANGELOG.md -Encoding utf8
 $version = ""
 $title = ""
 $body = ""
@@ -24,15 +24,28 @@ if (-not $version) {
     exit 1
 }
 
-# Check current npm version
-$currentVersion = (Get-Content package.json | ConvertFrom-Json).version
+$body = $body.Trim()
 
-Write-Host "About to release:" -ForegroundColor Cyan
+# Check if this release already exists on GitHub
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+    gh release view $version --json tagName > $null 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Error: Release $version already exists on GitHub." -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Check current npm version
+$currentVersion = (Get-Content package.json -Encoding utf8 | ConvertFrom-Json).version
+
+Write-Host "`nAbout to release:" -ForegroundColor Cyan
 Write-Host "  Version: $version - $title"
 if ($currentVersion -ne $version) {
     Write-Host "  npm version: $currentVersion -> $version"
 }
-Write-Host "`nNotes:`n$body"
+Write-Host "`nNotes:"
+Write-Host $body
+Write-Host ""
 
 $confirm = Read-Host "Proceed? [y/N]"
 if ($confirm -ne "y" -and $confirm -ne "Y") {
@@ -46,13 +59,13 @@ if ($currentVersion -ne $version) {
     npm.cmd version $version
 }
 
-# 2. Build
+# 2. Push
+Write-Host "Pushing to origin..."
+git push --follow-tags
+
+# 3. Build
 Write-Host "Building project..."
 npm.cmd run build
-
-# 3. Push
-Write-Host "Pushing to origin..."
-git push origin fixes --follow-tags
 
 # 4. Create Release (requires gh CLI)
 if (Get-Command gh -ErrorAction SilentlyContinue) {
@@ -62,7 +75,7 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
         --notes $body `
         --latest `
         main.js styles.css manifest.json
-    Write-Host "Release $version created successfully!" -ForegroundColor Green
+    Write-Host "`nRelease $version created successfully!" -ForegroundColor Green
 } else {
     Write-Host "`n[!] GitHub CLI (gh) not found in PATH." -ForegroundColor Yellow
     Write-Host "Please create the release manually at: https://github.com/alanalvarado/obsidian-fountain-1/releases/new"
