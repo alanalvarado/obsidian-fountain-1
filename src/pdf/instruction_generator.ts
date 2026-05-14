@@ -50,6 +50,7 @@ import {
   DUAL_RIGHT_CHARACTER_INDENT,
   DUAL_RIGHT_DIALOGUE_INDENT,
   DUAL_RIGHT_PARENTHETICAL_INDENT,
+  EXTENSION_INDENT,
   FONT_SIZE,
   LINE_HEIGHT,
   MARGIN_LEFT,
@@ -61,6 +62,7 @@ import {
   getCharacterWidth,
   getTitlePageCenterStart,
   getTitlePageCenterX,
+  TRANSITION_INDENT,
 } from "./types";
 
 /**
@@ -171,13 +173,19 @@ export function generateInstructions(
     hideNotes: true,
     hideSynopsis: false,
     hideMarginMarks: false,
+    layoutPreset: "standard",
+    linesPerPage: 55,
   },
 ): Instruction[] {
   const instructions: Instruction[] = [];
   const paperSize = PAPER_SIZES[options.paperSize];
 
-  // Calculate dynamic margins based on paper size and industry standards (Phase 2)
-  const verticalMargins = calculateVerticalMargins(paperSize.height);
+  // Calculate dynamic margins based on paper size and industry standards
+  const linesPerPage = options.linesPerPage || 55;
+  const verticalMargins = calculateVerticalMargins(
+    paperSize.height,
+    linesPerPage,
+  );
   const rightMargin = calculateRightMargin(
     paperSize.width,
     DEFAULT_CHARACTERS_PER_LINE.action,
@@ -1067,11 +1075,14 @@ function emitDialogueOnCurrentPage(
   let currentState = pageState;
 
   // Emit character name
-  const characterName = preparedDialogue.contd
-    ? `${preparedDialogue.characterLine} (CONT'D)`
-    : preparedDialogue.characterLine;
+  let name = preparedDialogue.characterName;
+  let exts = preparedDialogue.characterExtensions;
+  if (preparedDialogue.contd) {
+    exts = exts ? `${exts} (CONT'D)` : "(CONT'D)";
+  }
+
   emitText(instructions, currentState, {
-    data: characterName,
+    data: name,
     x: layout.characterX,
     bold: false,
     italic: false,
@@ -1080,6 +1091,32 @@ function emitDialogueOnCurrentPage(
     strikethrough: false,
     backgroundColor: undefined,
   });
+
+  // Emit extension separately if single-column
+  if (layout === SINGLE_LAYOUT && exts) {
+    emitText(instructions, currentState, {
+      data: exts,
+      x: EXTENSION_INDENT,
+      bold: false,
+      italic: false,
+      underline: false,
+      color: "black",
+      strikethrough: false,
+      backgroundColor: undefined,
+    });
+  } else if (exts) {
+    // For dual-column, append to name for space reasons
+    emitText(instructions, currentState, {
+      data: ` ${exts}`,
+      x: layout.characterX + name.length * getCharacterWidth(currentState.fontSize),
+      bold: false,
+      italic: false,
+      underline: false,
+      color: "black",
+      strikethrough: false,
+      backgroundColor: undefined,
+    });
+  }
   currentState = advanceLine(currentState);
 
   // Emit content lines (interleaved parentheticals and dialogue)
@@ -1158,8 +1195,10 @@ function emitDualDialogueOnCurrentPage(
   let currentState = pageState;
 
   // Both character names share the first line.
+  const leftName = left.characterName;
+  const leftExts = left.characterExtensions; // We'll just append in dual for space
   emitText(instructions, currentState, {
-    data: left.characterLine,
+    data: leftExts ? `${leftName} ${leftExts}` : leftName,
     x: DUAL_LEFT_LAYOUT.characterX,
     bold: false,
     italic: false,
@@ -1168,8 +1207,11 @@ function emitDualDialogueOnCurrentPage(
     strikethrough: false,
     backgroundColor: undefined,
   });
+
+  const rightName = right.characterName;
+  const rightExts = right.characterExtensions;
   emitText(instructions, currentState, {
-    data: right.characterLine,
+    data: rightExts ? `${rightName} ${rightExts}` : rightName,
     x: DUAL_RIGHT_LAYOUT.characterX,
     bold: false,
     italic: false,
@@ -1284,26 +1326,17 @@ function generateTransitionInstructions(
   transition: Transition,
   fountainScript: FountainScript,
 ): PageState {
-  // Extract the transition text from the document
-  const transitionText = extractTransitionText(
-    transition,
-    fountainScript,
-  ).toUpperCase();
+  // Transition text
+  const text = extractTransitionText(transition, fountainScript).toUpperCase();
 
-  // Add spacing before transition and ensure we have space
+  // Add spacing before and ensure we have space
   let currentState = addElementSpacing(pageState);
   currentState = needLines(instructions, currentState, 1);
 
-  // Calculate right-aligned position
-  const textWidth =
-    transitionText.length * getCharacterWidth(pageState.fontSize);
-  const rightAlignedX =
-    pageState.pageWidth - pageState.margins.right - textWidth;
-
-  // Generate instruction for transition
+  // Left-aligned at 6.0" (TRANSITION_INDENT)
   emitText(instructions, currentState, {
-    data: transitionText,
-    x: rightAlignedX,
+    data: text,
+    x: TRANSITION_INDENT,
     bold: false,
     italic: false,
     underline: false,

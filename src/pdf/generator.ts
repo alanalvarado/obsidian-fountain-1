@@ -41,6 +41,8 @@ export async function generatePDF(
     hideNotes: true,
     hideSynopsis: false,
     hideMarginMarks: false,
+    layoutPreset: "standard",
+    linesPerPage: 55,
   },
 ): Promise<PDFDocument> {
   // Check for unsupported characters before generating any instructions

@@ -245,7 +245,7 @@ describe("PDF Instruction Generation", () => {
         (inst) => inst.data === "JOHN",
       );
       expect(characterInstruction).toBeDefined();
-      expect(characterInstruction?.x).toBe(288); // CHARACTER_INDENT
+      expect(characterInstruction?.x).toBe(252); // CHARACTER_INDENT
       expect(characterInstruction?.italic).toBe(false);
 
       const dialogueText = textInstructions.find(
@@ -267,7 +267,7 @@ describe("PDF Instruction Generation", () => {
         (inst) => inst.data === "(softly)",
       );
       expect(parentheticalInstruction).toBeDefined();
-      expect(parentheticalInstruction?.x).toBe(234); // PARENTHETICAL_INDENT
+      expect(parentheticalInstruction?.x).toBe(216); // PARENTHETICAL_INDENT
     });
 
     it("should generate two-column instructions for a dual-dialogue pair", () => {
@@ -339,7 +339,7 @@ describe("PDF Instruction Generation", () => {
       const character = textInstructions.find((inst) => inst.data === "STEEL");
       expect(character).toBeDefined();
       // Single-column CHARACTER_INDENT, not the dual-left position.
-      expect(character?.x).toBe(288);
+      expect(character?.x).toBe(252);
     });
 
     it("each dual column wraps at the narrow column width, not full width", () => {
@@ -391,10 +391,10 @@ describe("PDF Instruction Generation", () => {
         .map((inst) => ({ data: inst.data, x: inst.x }));
 
       expect(dialogueTexts).toEqual([
-        { data: "STEEL", x: 288 }, // CHARACTER_INDENT
-        { data: "(starting the engine)", x: 234 }, // PARENTHETICAL_INDENT
+        { data: "STEEL", x: 252 }, // CHARACTER_INDENT
+        { data: "(starting the engine)", x: 216 }, // PARENTHETICAL_INDENT
         { data: "Hello.", x: 180 }, // DIALOGUE_INDENT
-        { data: "(beat)", x: 234 }, // PARENTHETICAL_INDENT
+        { data: "(beat)", x: 216 }, // PARENTHETICAL_INDENT
         { data: "Goodbye.", x: 180 }, // DIALOGUE_INDENT
       ]);
     });
@@ -975,11 +975,15 @@ MARY
       );
       expect(additionInstructions.length).toBe(3);
 
-      // Test removal notes (red italic with strikethrough)
+      // Test removal notes (red with strikethrough)
       const removalInstructions = textInstructions.filter(
-        (inst) => inst.color === "red" && !inst.italic && inst.strikethrough,
+        (inst) =>
+          inst.color === "red" &&
+          !inst.italic &&
+          inst.strikethrough &&
+          inst.data.includes("uncertainty"),
       );
-      expect(removalInstructions.length).toBe(2);
+      expect(removalInstructions.length).toBe(1);
 
       // Test todo notes (gray with TODO prefix)
       const todoInstructions = textInstructions.filter(
@@ -1311,12 +1315,13 @@ ${"Content to fill pages. ".repeat(200)}`;
     if (pageNumberInstructions.length > 0) {
       const pageNumber = pageNumberInstructions[0];
       const paperSize = { width: 612, height: 792 }; // Letter size
-      const topMargin = 36; // Expected top margin (calculated from LINES_PER_PAGE)
+      const topMargin = 66; // Expected top margin for 55 lines per page (Standard)
       const rightMargin = 72; // Expected right margin
 
       // Should be positioned at half the top margin height from top
-      const expectedY = paperSize.height - topMargin / 2;
-      expect(pageNumber.y).toBeCloseTo(expectedY, 1);
+      // New standard: 0.5" from top (792 - 36 = 756).
+      // We set pageNumberY = pageHeight - 36 - fontSize / 2 = 792 - 36 - 6 = 750.
+      expect(pageNumber.y).toBe(750);
 
       // Should be right-aligned in the right margin area
       expect(pageNumber.x).toBeLessThan(paperSize.width - rightMargin);

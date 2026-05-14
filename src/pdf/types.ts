@@ -102,9 +102,9 @@ export const LINE_HEIGHT = 12; // Single spacing
 
 // Character limits for text wrapping (Phase 1: extracted from hardcoded values)
 export const DEFAULT_CHARACTERS_PER_LINE = {
-  action: 61,
-  dialogue: 34,
-  parenthetical: 25,
+  action: 60,
+  dialogue: 30,
+  parenthetical: 30,
   titlePageCenter: 60,
   titlePageSides: 55,
 };
@@ -129,9 +129,11 @@ export function getCharacterWidth(fontSize: number): number {
 // Element positions (from left edge) - updated for 1.5" left margin
 export const SCENE_HEADING_INDENT = 108; // 1.5" (matches left margin)
 export const ACTION_INDENT = 108; // 1.5" (matches left margin)
-export const CHARACTER_INDENT = 288; // ~4" (adjusted for new left margin)
-export const DIALOGUE_INDENT = 180; // 2.5" (adjusted for new left margin)
-export const PARENTHETICAL_INDENT = 234; // 3.25" (adjusted for new left margin)
+export const CHARACTER_INDENT = 252; // 3.5" (1.5" + 2.0")
+export const DIALOGUE_INDENT = 180; // 2.5" (1.5" + 1.0")
+export const PARENTHETICAL_INDENT = 216; // 3.0" (1.5" + 1.5")
+export const TRANSITION_INDENT = 432; // 6.0" (1.5" + 4.5")
+export const EXTENSION_INDENT = 288; // 4.0" (1.5" + 2.5")
 
 // Dual-dialogue layout (industry standard: two columns, narrower per column)
 export const DUAL_LEFT_DIALOGUE_INDENT = 108; // 1.5" (left margin)
@@ -164,12 +166,15 @@ export function calculateRightMargin(
   );
 }
 
-export function calculateVerticalMargins(pageHeight: number): {
+export function calculateVerticalMargins(
+  pageHeight: number,
+  linesPerPage: number,
+): {
   top: number;
   bottom: number;
 } {
   // Center the desired number of lines on the page
-  const totalTextHeight = LINES_PER_PAGE * LINE_HEIGHT;
+  const totalTextHeight = linesPerPage * LINE_HEIGHT;
   const availableHeight = pageHeight - totalTextHeight;
   const verticalMargin = availableHeight / 2;
 
@@ -224,7 +229,8 @@ export type PreparedDialogueContentLine =
 
 // Prepared dialogue data for rendering
 export type PreparedDialogue = {
-  characterLine: string;
+  characterName: string;
+  characterExtensions: string;
   contentLines: PreparedDialogueContentLine[];
   contd: boolean;
 };

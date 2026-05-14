@@ -35,7 +35,7 @@ export function emitNewPage(
 
   const newPageState = {
     ...pageState,
-    currentY: pageState.pageHeight - pageState.margins.top,
+    currentY: pageState.pageHeight - pageState.margins.top - pageState.fontSize,
     pageNumber: pageState.pageNumber + 1,
     lastElementType: null, // Reset spacing for new page
   };
@@ -52,8 +52,9 @@ export function emitNewPage(
       ? newPageState.pageNumber - 1
       : newPageState.pageNumber;
 
-    // Upper right, vertically aligned at half the top margin.
-    const pageNumberY = pageState.pageHeight - pageState.margins.top / 2;
+    // Upper right, vertically aligned in the top margin.
+    // Standard is 0.5" from top.
+    const pageNumberY = pageState.pageHeight - 36 - pageState.fontSize / 2;
     const pageNumberText = `${displayNumber}.`;
 
     const charWidth = getCharacterWidth(pageState.fontSize);

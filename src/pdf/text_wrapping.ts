@@ -60,7 +60,7 @@ export function prepareDialogueData(
       .trim();
   }
 
-  const characterLine = characterName + characterExtensions;
+
 
   const dialogueWidth = widths?.dialogue ?? pageState.charactersPerLine.dialogue;
   const parentheticalWidth =
@@ -107,7 +107,8 @@ export function prepareDialogueData(
   }
 
   return {
-    characterLine,
+    characterName,
+    characterExtensions,
     contentLines,
     contd: false,
   };
@@ -136,13 +137,15 @@ export function splitDialogue(
     preparedDialogue.contentLines.slice(linesForFirstPart);
 
   const firstPart: PreparedDialogue = {
-    characterLine: preparedDialogue.characterLine,
+    characterName: preparedDialogue.characterName,
+    characterExtensions: preparedDialogue.characterExtensions,
     contentLines: contentPartA,
     contd: preparedDialogue.contd,
   };
 
   const secondPart: PreparedDialogue = {
-    characterLine: preparedDialogue.characterLine,
+    characterName: preparedDialogue.characterName,
+    characterExtensions: preparedDialogue.characterExtensions,
     contentLines: contentPartB,
     contd: true,
   };
