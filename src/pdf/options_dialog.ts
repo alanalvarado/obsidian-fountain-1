@@ -6,6 +6,8 @@ export interface PDFOptions {
   hideNotes: boolean;
   hideSynopsis: boolean;
   hideMarginMarks: boolean;
+  layoutPreset: "standard" | "warner" | "custom";
+  linesPerPage: number;
 }
 
 export class PDFOptionsDialog extends Modal {
@@ -15,6 +17,8 @@ export class PDFOptionsDialog extends Modal {
     hideNotes: true,
     hideSynopsis: true,
     hideMarginMarks: false,
+    layoutPreset: "standard",
+    linesPerPage: 55,
   };
 
   constructor(
@@ -108,6 +112,48 @@ export class PDFOptionsDialog extends Modal {
           this.options.hideMarginMarks = value;
         });
       });
+
+    // Layout Preset dropdown
+    const linesPerPageSetting = new Setting(contentEl)
+      .setName("Lines per page")
+      .setDesc("Custom lines per page (50-60)")
+      .addText((text) => {
+        text
+          .setPlaceholder("55")
+          .setValue(this.options.linesPerPage.toString())
+          .onChange((value) => {
+            const num = parseInt(value);
+            if (!isNaN(num) && num >= 40 && num <= 80) {
+              this.options.linesPerPage = num;
+            }
+          });
+      });
+
+    // Only show custom lines input if "custom" is selected
+    const updateLinesVisibility = (preset: string) => {
+      linesPerPageSetting.settingEl.style.display =
+        preset === "custom" ? "flex" : "none";
+    };
+
+    new Setting(contentEl)
+      .setName("Layout density")
+      .setDesc("Choose between standard presets or a custom line count")
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("standard", "Standard (54 lines - 1\" margins)")
+          .addOption("warner", "Warner Bros (60 lines - 0.5\" margins)")
+          .addOption("custom", "Custom")
+          .setValue(this.options.layoutPreset)
+          .onChange((value) => {
+            const preset = value as "standard" | "warner" | "custom";
+            this.options.layoutPreset = preset;
+            if (preset === "standard") this.options.linesPerPage = 54;
+            if (preset === "warner") this.options.linesPerPage = 60;
+            updateLinesVisibility(preset);
+          });
+      });
+
+    updateLinesVisibility(this.options.layoutPreset);
 
     // Buttons
     new Setting(contentEl)

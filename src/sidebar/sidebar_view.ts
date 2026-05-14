@@ -484,7 +484,8 @@ class TocSection extends SidebarSection {
       const dragData = JSON.parse(json);
 
       // No-op if dropping on itself
-      if (dragData.path === path && dragData.range.start === range.start) return;
+      const ft = this.theFountainView();
+      if (ft && ft.file && ft.file.path === dragData.path && dragData.range.start === range.start) return;
 
       callbacks.moveSceneAcross({
         srcPath: dragData.path,
@@ -722,7 +723,7 @@ export class FountainSideBarView extends ItemView {
         const script = ft.getScript();
         if (!("error" in script)) {
           const isEditMode = ft.isEditMode();
-          const path = ft.file.path;
+          const path = ft.file?.path ?? "";
           for (const section of this.sections) {
             try {
               section.render(sidebarDiv, script, isEditMode, path);

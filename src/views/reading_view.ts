@@ -13,11 +13,10 @@ import { NBSP, dataRange, extractTransitionText } from "../fountain";
 import { renderBlankLine } from "./render_tools";
 import { styledTextToHtml } from "./styled_text";
 export {
-  renderFountain,
-  getDataRange,
-  rangeOfFirstVisibleLine,
   renderElement,
   renderContent,
+  renderFountain,
+  rangeOfFirstVisibleLine,
 };
 
 function renderAction(
@@ -459,4 +458,18 @@ function rangeOfFirstVisibleLine(screenplayElement: HTMLElement): Range | null {
     }
   }
   return null;
+}
+
+/**
+ * Measure the number of pixels in one inch on the current screen.
+ */
+export function measureInches(): number {
+  const div = document.createElement("div");
+  div.style.width = "1in";
+  div.style.position = "absolute";
+  div.style.visibility = "hidden";
+  document.body.appendChild(div);
+  const inches = div.getBoundingClientRect().width;
+  document.body.removeChild(div);
+  return inches;
 }
