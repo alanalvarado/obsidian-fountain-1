@@ -103,7 +103,7 @@ export const LINE_HEIGHT = 12; // Single spacing
 // Character limits for text wrapping (Phase 1: extracted from hardcoded values)
 export const DEFAULT_CHARACTERS_PER_LINE = {
   action: 60,
-  dialogue: 30,
+  dialogue: 37,
   parenthetical: 30,
   titlePageCenter: 60,
   titlePageSides: 55,

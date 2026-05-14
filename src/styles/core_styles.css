@@ -261,8 +261,8 @@
 .screenplay .dialogue-words {
 	display: block;
 	text-align: left;
-	width: 30ch;
-	max-width: 30ch;
+	width: 37ch;
+	max-width: 37ch;
 	margin-top: 0;
 	margin-bottom: 0;
 	margin-right: 0;
@@ -276,7 +276,7 @@
    reading-mode .dialogue-words div does. */
 .screenplay.cm-editor .cm-line.dialogue-words-line {
 	padding-left: 1.0in;
-	max-width: calc(1.0in + 30ch);
+	max-width: calc(1.0in + 37ch);
 	box-sizing: border-box;
 }
 
