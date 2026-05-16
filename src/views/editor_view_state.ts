@@ -19,7 +19,7 @@ import { createFountainFoldService } from "../codemirror/folding";
 import type { LinkCompletionCandidate } from "../codemirror/link_completion";
 import { fountainScriptField } from "../codemirror/state";
 import type { Edit, FountainScript, Range } from "../fountain";
-import { findSceneAtOffset } from "../fountain";
+import { findLinkAtOffset, findSceneAtOffset, parseLinkContent } from "../fountain";
 import { Logger } from "../logger";
 import type { ViewState } from "./view_state";
 
@@ -28,6 +28,8 @@ export type EditorCallbacks = {
   requestSave: () => void;
   /** Optional source of link completion candidates triggered on `[[>`. */
   getLinkCandidates?: () => LinkCompletionCandidate[];
+  /** Navigate to a link target. `event` carries Mod/Shift modifiers. */
+  openLink?: (target: string, event: MouseEvent) => void;
 };
 
 /// Returns the first scrollable element starting at the current element up to the DOM tree.
@@ -111,6 +113,30 @@ export class EditorViewState implements ViewState {
             );
             callbacks.requestSave();
           }
+        }),
+        EditorView.domEventHandlers({
+          click: (event, view) => {
+            if (event.ctrlKey || event.metaKey) {
+              const pos = view.posAtCoords({
+                x: event.clientX,
+                y: event.clientY,
+              });
+              if (pos !== null) {
+                const script = view.state.field(fountainScriptField);
+                const link = findLinkAtOffset(script, pos);
+                if (link) {
+                  const text = script.document.slice(
+                    link.textRange.start,
+                    link.textRange.end,
+                  );
+                  const { target } = parseLinkContent(text);
+                  callbacks.openLink?.(target, event);
+                  return true;
+                }
+              }
+            }
+            return false;
+          },
         }),
       ],
     });

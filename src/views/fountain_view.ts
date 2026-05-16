@@ -296,6 +296,7 @@ export class FountainView extends TextFileView {
       onScriptChanged: (s) => this.onUserEdit(s),
       requestSave: () => this.requestSave(),
       getLinkCandidates: () => this.getLinkCandidates(),
+      openLink: (target, event) => this.openLink(target, event),
     };
   }
 

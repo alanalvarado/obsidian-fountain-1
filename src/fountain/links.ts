@@ -1,10 +1,22 @@
 import type { FountainElement, Line, Note } from "./types";
 import { dialogueLines } from "./utils";
+import type { FountainScript } from "./script";
 
 export const LINK_NOTE_KIND = ">";
 
 export function isLinkNote(note: Note): boolean {
   return note.noteKind === LINK_NOTE_KIND;
+}
+
+/** Find a link note at the given offset, if any. */
+export function findLinkAtOffset(
+  script: FountainScript,
+  offset: number,
+): Note | null {
+  const links = extractLinks(script.script);
+  return (
+    links.find((l) => offset >= l.range.start && offset < l.range.end) ?? null
+  );
 }
 
 export interface ParsedLink {

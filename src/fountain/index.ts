@@ -74,5 +74,6 @@ export {
   isLinkNote,
   parseLinkContent,
   extractLinks,
+  findLinkAtOffset,
   targetRefersTo,
 } from "./links";
