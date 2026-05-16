@@ -27,6 +27,7 @@ import { applyEditsToFountainFile } from "./edit_pipeline";
 import type { Edit } from "./fountain";
 import { parse } from "./fountain/parser";
 import { LinkIndex } from "./links_index";
+import { FountainConfirmModal } from "./modals/confirm_modal";
 import { EditorViewState } from "./views/editor_view_state";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./views/fountain_view";
 import { renderContent } from "./views/reading_view";
@@ -400,46 +401,3 @@ class FountainSettingTab extends PluginSettingTab {
   }
 }
 
-/**
- * An in-app confirmation modal that replaces window.confirm().
- * Unlike the native OS dialog, this renders entirely within the Electron
- * window DOM and does NOT trigger an OS-level window blur/focus steal.
- */
-class FountainConfirmModal extends Modal {
-  private title: string;
-  private message: string;
-  private onConfirm: () => void;
-
-  constructor(app: App, title: string, message: string, onConfirm: () => void) {
-    super(app);
-    this.title = title;
-    this.message = message;
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    contentEl.createEl("h2", { text: this.title });
-    contentEl.createEl("p", { text: this.message });
-
-    const buttonRow = contentEl.createDiv({ cls: "modal-button-container" });
-
-    new ButtonComponent(buttonRow)
-      .setButtonText("Cancel")
-      .onClick(() => this.close());
-
-    new ButtonComponent(buttonRow)
-      .setButtonText("Proceed")
-      .setCta()
-      .onClick(() => {
-        this.close();
-        this.onConfirm();
-      });
-  }
-
-  onClose() {
-    this.contentEl.empty();
-  }
-}

@@ -1,5 +1,6 @@
 import { App, ItemView, Menu, Modal, Setting, TFile, type WorkspaceLeaf, debounce, setIcon } from "obsidian";
 import { findFountainViewsForPath } from "../edit_pipeline";
+import { FountainConfirmModal } from "../modals/confirm_modal";
 import {
   type FountainScript,
   type Range,
@@ -252,11 +253,16 @@ class BoneyardSection extends SidebarSection {
                   .setTitle("Delete Omission")
                   .setIcon("trash")
                   .onClick(() => {
-                    if (confirm("Are you sure you want to delete this boneyard omission?")) {
-                      this.callbacks.replaceText(block.range, "");
-                      this.callbacks.requestSave();
-                      this.callbacks.reRender();
-                    }
+                    new FountainConfirmModal(
+                      this.callbacks.app,
+                      "Delete Boneyard Omission",
+                      "Are you sure you want to delete this boneyard omission?",
+                      () => {
+                        this.callbacks.replaceText(block.range, "");
+                        this.callbacks.requestSave();
+                        this.callbacks.reRender();
+                      },
+                    ).open();
                   });
               });
 
@@ -452,15 +458,23 @@ class SnippetsSection extends SidebarSection {
   }
 
   private deleteSnippet(snippet: Snippet) {
-    if (!confirm("Are you sure you want to delete this snippet?")) return;
-    
-    const view = this.callbacks.getView();
-    if (!view) return;
-    const adapter = snippet.category === "Beat JSON" ? new BeatAdapter() : new FountainAdapter();
-    adapter.deleteSnippet(view, snippet);
-    
-    this.callbacks.requestSave();
-    this.callbacks.reRender();
+    new FountainConfirmModal(
+      this.callbacks.app,
+      "Delete Snippet",
+      "Are you sure you want to delete this snippet?",
+      () => {
+        const view = this.callbacks.getView();
+        if (!view) return;
+        const adapter =
+          snippet.category === "Beat JSON"
+            ? new BeatAdapter()
+            : new FountainAdapter();
+        adapter.deleteSnippet(view, snippet);
+
+        this.callbacks.requestSave();
+        this.callbacks.reRender();
+      },
+    ).open();
   }
 }
 
