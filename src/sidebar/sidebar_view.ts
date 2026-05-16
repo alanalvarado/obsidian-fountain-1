@@ -23,6 +23,54 @@ import { sanitizeSnippets } from "../fountain/sanitizer";
 
 export const VIEW_TYPE_SIDEBAR = "fountain-sidebar";
 
+/** Manages floating snapshots of screenplay content when hovering over sidebar items. */
+class HoverPreviewManager {
+  private tooltipEl: HTMLElement | null = null;
+  private timeout: number | null = null;
+
+  setup(target: HTMLElement, contentProvider: (container: HTMLElement) => void) {
+    target.addEventListener("mouseenter", () => {
+      if (this.timeout) window.clearTimeout(this.timeout);
+      this.timeout = window.setTimeout(() => {
+        this.show(target, contentProvider);
+      }, 500);
+    });
+
+    target.addEventListener("mouseleave", () => this.hide());
+    target.addEventListener("mousedown", () => this.hide());
+  }
+
+  private show(target: HTMLElement, contentProvider: (container: HTMLElement) => void) {
+    this.hide();
+
+    this.tooltipEl = document.body.createDiv({ cls: "fountain-hover-preview" });
+    contentProvider(this.tooltipEl);
+
+    const rect = target.getBoundingClientRect();
+    
+    // Position to the left of the target (sidebar is on the right)
+    this.tooltipEl.style.top = `${Math.max(10, rect.top)}px`;
+    this.tooltipEl.style.right = `${window.innerWidth - rect.left + 15}px`;
+    
+    // Initial state for animation
+    this.tooltipEl.style.opacity = "0";
+    requestAnimationFrame(() => {
+        if (this.tooltipEl) this.tooltipEl.style.opacity = "1";
+    });
+  }
+
+  private hide() {
+    if (this.timeout) {
+      window.clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    if (this.tooltipEl) {
+      this.tooltipEl.remove();
+      this.tooltipEl = null;
+    }
+  }
+}
+
 interface SidebarCallbacks {
   scrollToRange: (range: Range) => void;
   getText: (range: Range) => string;
@@ -44,6 +92,7 @@ interface SidebarCallbacks {
   app: App;
   focusEditor: () => void;
   getView: () => FountainView | null;
+  hoverPreview: HoverPreviewManager;
 }
 
 abstract class SidebarSection {
@@ -269,6 +318,12 @@ class BoneyardSection extends SidebarSection {
               menu.showAtMouseEvent(evt);
             });
 
+            // Hover Preview
+            this.callbacks.hoverPreview.setup(item, (container) => {
+              const fullText = script.sliceDocument(block.range).replace(/\/\*|\*\//g, "").trim();
+              container.setText(fullText);
+            });
+
             const previewText = script.sliceDocument(block.range).replace(/\/\*|\*\//g, "").trim().slice(0, 80);
             item.createDiv({ cls: "boneyard-preview", text: previewText + (previewText.length >= 80 ? "..." : "") });
           });
@@ -280,6 +335,7 @@ class BoneyardSection extends SidebarSection {
 
 class SnippetsSection extends SidebarSection {
   private searchQuery = "";
+  private listContainerEl: HTMLElement | null = null;
 
   render(
     container: HTMLElement,
@@ -294,50 +350,29 @@ class SnippetsSection extends SidebarSection {
       { cls: ["metrics-section", "snippets-container", !hasSnippets ? "is-empty" : ""] },
       (sectionDiv) => {
         sectionDiv.addClass("screenplay-snippets");
-        sectionDiv.addClass("sidebar-flex-container"); // New flex wrapper
+        sectionDiv.addClass("sidebar-flex-container");
         
         sectionDiv.createDiv({ cls: "metrics-header", text: "SNIPPETS" });
 
-        // Content Area (Scrollable)
-        sectionDiv.createDiv({ cls: "sidebar-content-area" }, (contentArea) => {
-          // Add search bar
-          if (hasSnippets) {
-            contentArea.createDiv({ cls: "snippet-search-container" }, (searchDiv) => {
-              const input = searchDiv.createEl("input", {
-                attr: { type: "text", placeholder: "Search snippets...", value: this.searchQuery },
-                cls: "snippet-search-input",
-              });
-              input.addEventListener("input", (e) => {
-                this.searchQuery = (e.target as HTMLInputElement).value;
-                this.callbacks.reRender();
-              });
+        // Search Bar (Fixed at top)
+        if (hasSnippets) {
+          sectionDiv.createDiv({ cls: "snippet-search-container" }, (searchDiv) => {
+            const input = searchDiv.createEl("input", {
+              attr: { type: "text", placeholder: "Search snippets...", value: this.searchQuery },
+              cls: "snippet-search-input",
             });
-          }
-
-          if (hasSnippets) {
-            const filteredSnippets = structure.snippets.filter(s => {
-              if (!this.searchQuery) return true;
-              const q = this.searchQuery.toLowerCase();
-              const content = s.content.map(el => script.sliceDocument(el.range)).join(" ").toLowerCase();
-              return (s.title?.toLowerCase().includes(q) || 
-                      s.category?.toLowerCase().includes(q) || 
-                      content.includes(q));
-            });
-
-            if (filteredSnippets.length === 0) {
-              contentArea.createEl("div", {
-                text: "No matches found",
-                cls: "snippets-instruction",
-              });
-            } else {
-              for (let i = 0; i < filteredSnippets.length; i++) {
-                this.renderSnippet(contentArea, script, filteredSnippets[i], i);
+            input.addEventListener("input", (e) => {
+              this.searchQuery = (e.target as HTMLInputElement).value;
+              if (this.listContainerEl) {
+                this.renderFilteredList(this.listContainerEl, script);
               }
-            }
-          } else {
-            // No central instruction here anymore, it's moved to the status bar
-          }
-        });
+            });
+          });
+        }
+
+        // Content Area (Scrollable)
+        this.listContainerEl = sectionDiv.createDiv({ cls: "sidebar-content-area" });
+        this.renderFilteredList(this.listContainerEl, script);
 
         // Footer / Status Bar (Pinned to bottom)
         sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
@@ -404,6 +439,30 @@ class SnippetsSection extends SidebarSection {
         });
       },
     );
+  }
+
+  private renderFilteredList(contentArea: HTMLElement, script: FountainScript) {
+    contentArea.empty();
+    const snippets = script.structure().snippets || [];
+    const filteredSnippets = snippets.filter(s => {
+      if (!this.searchQuery) return true;
+      const q = this.searchQuery.toLowerCase();
+      const content = s.content.map(el => script.sliceDocument(el.range)).join(" ").toLowerCase();
+      return (s.title?.toLowerCase().includes(q) || 
+              s.category?.toLowerCase().includes(q) || 
+              content.includes(q));
+    });
+
+    if (filteredSnippets.length === 0) {
+      contentArea.createEl("div", {
+        text: this.searchQuery ? "No matches found" : "No snippets found",
+        cls: "snippets-instruction",
+      });
+    } else {
+      for (let i = 0; i < filteredSnippets.length; i++) {
+        this.renderSnippet(contentArea, script, filteredSnippets[i], i);
+      }
+    }
   }
 
   private renderSnippet(
@@ -482,6 +541,17 @@ class SnippetsSection extends SidebarSection {
         });
 
         menu.showAtMouseEvent(evt);
+      });
+
+      // Hover Preview
+      this.callbacks.hoverPreview.setup(snippetDiv, (container) => {
+        if (snippet.category === "Beat JSON" && snippet.text) {
+          container.setText(snippet.text);
+        } else if (snippet.bodyRange) {
+          container.setText(script.sliceDocument(snippet.bodyRange).trim());
+        } else if (snippet.range) {
+          container.setText(script.sliceDocument(snippet.range).trim());
+        }
       });
 
       snippetDiv.createDiv({ cls: "snippet-preview" }, (preview) => {
@@ -699,6 +769,12 @@ class TocSection extends SidebarSection {
           d.addEventListener("click", (evt: Event) => {
             this.callbacks.scrollToRange(el_scene.range);
           });
+
+          // Hover Preview
+          this.callbacks.hoverPreview.setup(d, (container) => {
+            const fullText = script.sliceDocument(el.range).trim();
+            container.setText(fullText);
+          });
         }
         if (el.synopsis) {
           this.renderSynopsis(s, script, el.synopsis);
@@ -862,9 +938,11 @@ class CharactersSection extends SidebarSection {
 export class FountainSideBarView extends ItemView {
   private updateToc: () => void;
   private sections: SidebarSection[];
+  private hoverPreviewManager: HoverPreviewManager;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
+    this.hoverPreviewManager = new HoverPreviewManager();
     this.sections = [
       new ModeSection(this.sidebarCallbacks()),
       new MetricsSection(this.sidebarCallbacks()),
@@ -944,6 +1022,7 @@ export class FountainSideBarView extends ItemView {
         if (view) view.focusEditor();
       },
       getView: () => this.theFountainView(),
+      hoverPreview: this.hoverPreviewManager,
     };
   }
 
