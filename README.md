@@ -12,6 +12,7 @@ A plugin for writing screenplays in [Fountain format](https://fountain.io) insid
 - **Index card view** — click a card to jump back to the editor at that scene; rename scene and section headings inline; insert scenes or sections at any position via hover gutters; change section depth or delete a section heading from the same rename input; drag-reorder across files; ⌘⇧I round-trips between cards and editor.
 - **Outline-style sidebar** that doubles as a planning tree — sections, synopses, and per-scene todos, all click-to-jump.
 - **Rehearsal mode** that blacks out a character's dialogue, so you can actually rehearse from the script.
+- **[Custom Syntax Extensions](syntax.md)** — support for links, todos, margin marks, and BEAT-style color coding.
 
 ## Quick overview
 
@@ -49,6 +50,7 @@ Rehearsal mode blacks out a character's dialogue:
 - toggle edit mode with Cmd/Ctrl+E (when a fountain file has focus)
 - toggle index-card view with Cmd/Ctrl+Shift+I; the cursor and scroll position are preserved across the round-trip
 - select the current scene as text with Cmd/Ctrl+Shift+L — composes with the system clipboard for delete (`⌘X`) and duplicate (`⌘C`, `↓`, `⌘V`), or to cut a scene out and paste it into another file
+- **Comprehensive [Syntax Guide](syntax.md)** for all plugin-specific and BEAT-compatible extensions.
 
 ## Command reference
 
