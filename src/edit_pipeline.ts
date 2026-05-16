@@ -2,6 +2,7 @@ import { type App, TFile } from "obsidian";
 import { type Edit, applyEdits } from "./fountain";
 import { parse } from "./fountain/parser";
 import { FountainView } from "./views/fountain_view";
+import { Logger } from "./logger";
 
 /**
  * Single programmatic-edit pipeline for fountain files. Path-keyed so
@@ -40,7 +41,7 @@ export async function applyEditsToFountainFile(
 
   // Defer disk write to avoid immediate window blur/blackout
   setTimeout(async () => {
-    console.log(`Fountain: Deferring vault modify for ${path} to avoid window blur...`);
+    Logger.debug("EditPipeline", `Deferring vault modify for ${path} to avoid window blur...`);
     await app.vault.modify(file, newText);
   }, 1500);
 }

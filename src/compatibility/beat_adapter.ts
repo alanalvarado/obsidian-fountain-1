@@ -3,6 +3,7 @@ import { FountainScript } from "../fountain/script";
 import type { Edit } from "../fountain";
 import { ICompatibilityAdapter } from "./types";
 import { SceneHeading, Section } from "../fountain/types";
+import { Logger } from "../logger";
 
 export const BEAT_BOILERPLATE_START = "If you're seeing this, you can remove the following stuff - BEAT: ";
 export const BEAT_BOILERPLATE_END = " END_BEAT";
@@ -90,7 +91,7 @@ export class BeatAdapter implements ICompatibilityAdapter {
           const newComment = content.replace(jsonMatch[1], newJson);
           view.replaceText(metadataRange, newComment);
         } catch (e) {
-          console.error("Fountain: Error updating Beat metadata", e);
+          Logger.error("BeatAdapter", "Error updating Beat metadata", e);
           new Notice("Error updating Beat metadata. Check console.");
         }
       }
@@ -120,7 +121,7 @@ export class BeatAdapter implements ICompatibilityAdapter {
             view.replaceText(metadataRange, newComment);
           }
         } catch (e) {
-          console.error("Fountain: Error deleting Beat JSON snippet", e);
+          Logger.error("BeatAdapter", "Error deleting Beat JSON snippet", e);
         }
       }
     }
@@ -146,14 +147,14 @@ export class BeatAdapter implements ICompatibilityAdapter {
             view.replaceText(metadataRange, newComment);
           }
         } catch (e) {
-          console.error("Fountain: Error renaming Beat JSON snippet", e);
+          Logger.error("BeatAdapter", "Error renaming Beat JSON snippet", e);
         }
       }
     }
   }
 
   scrubProprietaryTags(script: FountainScript): Edit[] {
-    console.log("Fountain: Starting refined proprietary tag scrub...");
+    Logger.debug("BeatAdapter", "Starting refined proprietary tag scrub...");
     const doc = script.document;
     const edits: Edit[] = [];
     const processedIndices = new Set<number>();

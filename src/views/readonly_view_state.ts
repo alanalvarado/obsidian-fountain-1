@@ -4,6 +4,7 @@ import type {
   Range,
   ShowHideSettings,
 } from "../fountain";
+import { Logger } from "../logger";
 import { renderIndexCards } from "./index_cards_view";
 import { rangeOfFirstVisibleLine, renderFountain } from "./reading_view";
 import {
@@ -102,7 +103,7 @@ export class ReadonlyViewState implements ViewState {
       // The parser should not fail but handle bad inputs as action lines
       // if you managed to construct a script for which that is not true
       // please report this as a bug.
-      console.error("error parsing script", fp);
+      Logger.error("ReadonlyViewState", `Error parsing script: ${fp.error}`);
       return;
     }
     const mainblock = this.contentEl.createDiv(

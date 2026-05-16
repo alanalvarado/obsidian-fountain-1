@@ -30,6 +30,7 @@ import { LinkIndex } from "./links_index";
 import { EditorViewState } from "./views/editor_view_state";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./views/fountain_view";
 import { renderContent } from "./views/reading_view";
+import { Logger } from "./logger";
 import {
   FountainSideBarView,
   VIEW_TYPE_SIDEBAR,
@@ -37,10 +38,12 @@ import {
 
 export interface FountainSettings {
   compatibilityMode: "fountain" | "beat";
+  debugMode: boolean;
 }
 
 const DEFAULT_SETTINGS: FountainSettings = {
   compatibilityMode: "fountain",
+  debugMode: false,
 };
 
 export default class FountainPlugin extends Plugin {
@@ -49,6 +52,7 @@ export default class FountainPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+    Logger.initialize(this.settings.debugMode);
     this.updateActiveAdapter();
     this.registerView(VIEW_TYPE_FOUNTAIN, (leaf) => new FountainView(leaf));
     this.registerExtensions(["fountain"], VIEW_TYPE_FOUNTAIN);
@@ -126,6 +130,7 @@ export default class FountainPlugin extends Plugin {
 
   private updateActiveAdapter() {
     const mode = this.settings.compatibilityMode || "fountain";
+    Logger.initialize(this.settings.debugMode);
     setActiveAdapter(mode === "beat" ? new BeatAdapter() : new FountainAdapter());
   }
 
@@ -378,6 +383,18 @@ class FountainSettingTab extends PluginSettingTab {
                 leaf.view.updateLines();
               }
             }
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Debug Mode")
+      .setDesc("Enable detailed diagnostic logging in the console.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.debugMode)
+          .onChange(async (value) => {
+            this.plugin.settings.debugMode = value;
+            await this.plugin.saveSettings();
           }),
       );
   }

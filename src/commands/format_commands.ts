@@ -4,6 +4,7 @@ import { EditorViewState } from "../views/editor_view_state";
 import { BeatAdapter } from "../compatibility/beat_adapter";
 import { FountainAdapter } from "../compatibility/fountain_adapter";
 import { ICompatibilityAdapter } from "../compatibility/types";
+import { Logger } from "../logger";
 
 export function getCompatibilityAdapter(app: App, forceType?: "fountain" | "beat"): ICompatibilityAdapter {
   const plugin = (app as any).plugins.getPlugin("fountain");
@@ -87,7 +88,7 @@ export async function consolidateBeatBlocks(view: FountainView) {
     const newJson = JSON.stringify(primaryData);
     view.replaceText(primaryRange, primaryContent.replace(primaryMatch[1], newJson));
   } catch (e) {
-    console.error("Fountain: Error consolidating Beat blocks", e);
+    Logger.error("FormatCommands", "Error consolidating Beat blocks", e);
   }
 }
 
@@ -95,17 +96,17 @@ import type { Edit } from "../fountain";
 import { BEAT_BOILERPLATE_START, BEAT_BOILERPLATE_END } from "../compatibility/beat_adapter";
 
 export async function convertDocumentFormat(view: FountainView, targetStyle: "fountain" | "beat") {
-  console.log(`Fountain: Starting conversion to ${targetStyle} format...`);
+  Logger.info("FormatCommands", `Starting conversion to ${targetStyle} format...`);
 
   const blurTrace = () => {
-    console.log("Fountain: Window BLUR detected!");
-    console.log("Active element at blur:", document.activeElement?.tagName, (document.activeElement as any)?.className);
+    Logger.debug("FormatCommands", "Window BLUR detected!");
+    Logger.debug("FormatCommands", `Active element at blur: ${document.activeElement?.tagName} (${(document.activeElement as any)?.className})`);
   };
   window.addEventListener("blur", blurTrace, { once: true });
 
   const script = view.getScript();
   if ("error" in script) {
-    console.error("Fountain: Cannot convert, script parsing error", script.error);
+    Logger.error("FormatCommands", "Cannot convert, script parsing error", script.error);
     return;
   }
 
@@ -129,7 +130,7 @@ export async function convertDocumentFormat(view: FountainView, targetStyle: "fo
           try {
             beatData = JSON.parse(match[1]);
           } catch (e) {
-            console.error("Fountain: Error parsing existing beat metadata", e);
+            Logger.error("FormatCommands", "Error parsing existing beat metadata", e);
           }
         }
       }
@@ -164,7 +165,7 @@ export async function convertDocumentFormat(view: FountainView, targetStyle: "fo
     edits.push(...scrubEdits);
 
     if (edits.length > 0) await view.applyEditsToFile(edits);
-    console.log("Fountain: Conversion to Beat format complete.");
+    Logger.info("FormatCommands", "Conversion to Beat format complete.");
 
   } else {
     // Target is Standard Fountain
@@ -189,20 +190,20 @@ export async function convertDocumentFormat(view: FountainView, targetStyle: "fo
     // Awaiting one animation frame yields to the browser event loop so
     // Obsidian's natural palette-close focus restoration runs first — the
     // editor already holds OS focus by the time we dispatch CM changes.
-    console.log("Fountain: Awaiting rAF to let palette-close focus restoration complete...");
+    Logger.debug("FormatCommands", "Awaiting rAF to let palette-close focus restoration complete...");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    console.log(`Fountain: rAF resume. document.hasFocus()=${document.hasFocus()}, activeElement=${document.activeElement?.tagName} (${(document.activeElement as any)?.className})`);
+    Logger.debug("FormatCommands", `rAF resume. document.hasFocus()=${document.hasFocus()}, activeElement=${document.activeElement?.tagName} (${(document.activeElement as any)?.className})`);
 
     const startTime = performance.now();
     if (edits.length > 0) {
-      console.log(`Fountain: Applying ${edits.length} edits...`);
+      Logger.debug("FormatCommands", `Applying ${edits.length} edits...`);
       await view.applyEditsToFile(edits);
     }
 
     // Immediate rAF re-focus right after edits are dispatched to CM,
     // before the existing 500ms safety-net timeout fires.
     requestAnimationFrame(() => {
-      console.log(`Fountain: Post-edit rAF focus. hasFocus=${document.hasFocus()}`);
+      Logger.debug("FormatCommands", `Post-edit rAF focus. hasFocus=${document.hasFocus()}`);
       view.focusEditor();
     });
 
@@ -211,14 +212,14 @@ export async function convertDocumentFormat(view: FountainView, targetStyle: "fo
     }
 
     setTimeout(() => {
-      console.log(`Fountain: Final focus check. Active View: ${view.app.workspace.getActiveViewOfType(FountainView)?.file?.path === view.file?.path}`);
+      Logger.debug("FormatCommands", `Final focus check. Active View: ${view.app.workspace.getActiveViewOfType(FountainView)?.file?.path === view.file?.path}`);
       requestAnimationFrame(() => {
         view.focusEditor();
-        console.log("Fountain: Final focus attempt complete (via rAF).");
+        Logger.debug("FormatCommands", "Final focus attempt complete (via rAF).");
       });
     }, 500);
 
-    console.log("Fountain: Conversion to standard format complete.");
+    Logger.info("FormatCommands", "Conversion to standard format complete.");
   }
   window.removeEventListener("blur", blurTrace);
 }

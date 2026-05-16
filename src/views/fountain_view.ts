@@ -11,6 +11,7 @@ import {
   applyEditsToFountainFile,
   findFountainViewsForPath,
 } from "../edit_pipeline";
+import { Logger } from "../logger";
 import {
   type Edit,
   type FountainScript,
@@ -274,7 +275,7 @@ export class FountainView extends TextFileView {
       const leaf = inNewLeaf ? this.app.workspace.getLeaf("tab") : this.leaf;
       await leaf.openFile(file);
     } catch (err) {
-      console.error("fountain: failed to create linked file", path, err);
+      Logger.error("FountainView", `Failed to create linked file: ${path}`, err);
     }
   }
 
@@ -577,7 +578,7 @@ export class FountainView extends TextFileView {
   }
 
   toggleEditMode() {
-    console.log(`Fountain: toggleEditMode. Current mode: ${this.state.isEditMode ? "Edit" : "Readonly"}`);
+    Logger.info("FountainView", `toggleEditMode. Current mode: ${this.state.isEditMode ? "Edit" : "Readonly"}`);
     const text = this.state.getViewData();
     const firstVisibleLine = this.state.rangeOfFirstVisibleLine();
     if (this.state.isEditMode) {
@@ -734,19 +735,19 @@ export class FountainView extends TextFileView {
     try {
       const newScript = parse(data, {});
       if (this.cachedScript.document !== data) {
-         console.log(`Fountain: setViewData mismatch! Cached: ${this.cachedScript.document.length}, Disk: ${data.length}`);
-         if (this.cachedScript.document.length === data.length) {
-            console.log("Fountain: Lengths match but content differs. Possible normalization issue?");
-         }
+        Logger.debug("FountainView", `setViewData mismatch! Cached: ${this.cachedScript.document.length}, Disk: ${data.length}`);
+        if (this.cachedScript.document.length === data.length) {
+          Logger.debug("FountainView", "Lengths match but content differs. Possible normalization issue?");
+        }
       }
       for (const view of findFountainViewsForPath(this.app, path)) {
-        console.log(`Fountain: Updating view state for ${view.file?.path}`);
+        Logger.debug("FountainView", `Updating view state for ${view.file?.path}`);
         view.cachedScript = newScript;
         view.state.setPath(path);
         view.state.receiveScript(newScript);
       }
     } catch (e) {
-      console.error("Fountain: CRASH during setViewData parse/update", e);
+      Logger.error("FountainView", "CRASH during setViewData parse/update", e);
     }
   }
 
@@ -766,7 +767,7 @@ export class FountainView extends TextFileView {
   /// setState is called when the workspace.json deserialisation ran into
   /// a view of type fountain, it should restore the workspace.
   async setState(f: Record<string, unknown>, result: ViewStateResult) {
-    console.log("Fountain: setState called", f);
+    Logger.debug("FountainView", "setState called", f);
     await super.setState(f, result);
     // Mark this state change as a navigation event so the leaf records
     // it in its back/forward stack — without this, opening a different

@@ -950,7 +950,7 @@ export class FountainSideBarView extends ItemView {
             try {
               section.render(sidebarDiv, script, isEditMode, path);
             } catch (e) {
-              console.error("Fountain: Error rendering sidebar section", e);
+              Logger.error("SidebarView", "Error rendering sidebar section", e);
             }
           }
         }
