@@ -1,7 +1,12 @@
 import {
+  App,
+  ButtonComponent,
   type MarkdownPostProcessorContext,
+  Modal,
   Notice,
   Plugin,
+  PluginSettingTab,
+  Setting,
   TFile,
 } from "obsidian";
 import {
@@ -13,6 +18,11 @@ import {
   openSidebar,
   openSidebarCommand,
 } from "./commands";
+import { toggleBoneyardComment } from "./commands/boneyard_commands";
+import { moveSelectionToSnippets, convertDocumentFormat } from "./commands/format_commands";
+import { BeatAdapter } from "./compatibility/beat_adapter";
+import { FountainAdapter } from "./compatibility/fountain_adapter";
+import { setActiveAdapter } from "./compatibility/registry";
 import { applyEditsToFountainFile } from "./edit_pipeline";
 import type { Edit } from "./fountain";
 import { parse } from "./fountain/parser";
@@ -25,10 +35,21 @@ import {
   VIEW_TYPE_SIDEBAR,
 } from "./sidebar/sidebar_view";
 
+export interface FountainSettings {
+  compatibilityMode: "fountain" | "beat";
+}
+
+const DEFAULT_SETTINGS: FountainSettings = {
+  compatibilityMode: "fountain",
+};
+
 export default class FountainPlugin extends Plugin {
+  settings: FountainSettings;
   private linkIndex?: LinkIndex;
 
   async onload() {
+    await this.loadSettings();
+    this.updateActiveAdapter();
     this.registerView(VIEW_TYPE_FOUNTAIN, (leaf) => new FountainView(leaf));
     this.registerExtensions(["fountain"], VIEW_TYPE_FOUNTAIN);
     this.registerView(
@@ -43,6 +64,69 @@ export default class FountainPlugin extends Plugin {
       this.installFountainMdAutoRename();
     });
     this.registerMarkdownPostProcessor(this.markdownPostProcessor);
+    this.registerEvent(
+      this.app.workspace.on("editor-menu", (menu, editor, view) => {
+        if (view.getViewType() === VIEW_TYPE_FOUNTAIN) {
+          this.addFountainMenuItems(menu, view as FountainView);
+        }
+      }),
+    );
+    this.registerEvent(
+      this.app.workspace.on("fountain-menu", (menu, view) => {
+        this.addFountainMenuItems(menu, view);
+      }),
+    );
+    this.addSettingTab(new FountainSettingTab(this.app, this));
+
+    // Register Explicit Format Conversion Commands
+    this.addCommand({
+      id: "fountain-convert-beat",
+      name: "Convert Document to Beat Format",
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (view) {
+          if (!checking) {
+            convertDocumentFormat(view, "beat");
+          }
+          return true;
+        }
+        return false;
+      }
+    });
+
+    this.addCommand({
+      id: "fountain-convert-standard",
+      name: "Convert Document to Standard Fountain",
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (view) {
+          if (!checking) {
+            new FountainConfirmModal(
+              this.app,
+              "Convert to Standard Fountain",
+              "This will permanently scrub Beat compatibility tags (colors, markers) from this document. Proceed?",
+              () => convertDocumentFormat(view, "fountain"),
+            ).open();
+          }
+          return true;
+        }
+        return false;
+      }
+    });
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+    this.updateActiveAdapter();
+  }
+
+  private updateActiveAdapter() {
+    const mode = this.settings.compatibilityMode || "fountain";
+    setActiveAdapter(mode === "beat" ? new BeatAdapter() : new FountainAdapter());
   }
 
   /**
@@ -211,5 +295,134 @@ export default class FountainPlugin extends Plugin {
         return true;
       },
     });
+    this.addCommand({
+      id: "send-to-boneyard",
+      name: "Send selection to boneyard (In-line)",
+      checkCallback: (checking) => {
+        const fv = this.app.workspace.getActiveViewOfType(FountainView);
+        if (fv === null || !fv.hasSelection()) return false;
+        if (!checking) toggleBoneyardComment(fv);
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "move-to-snippets",
+      name: "Move selection to snippets (Library)",
+      checkCallback: (checking) => {
+        const fv = this.app.workspace.getActiveViewOfType(FountainView);
+        if (fv === null || !fv.hasSelection()) return false;
+        if (!checking) moveSelectionToSnippets(this.app, fv, true, this.settings.snippetStorage);
+        return true;
+      },
+    });
+  }
+
+  private addFountainMenuItems(menu: any, view: FountainView) {
+    let isBoneyard = false;
+    if (view.state instanceof EditorViewState) {
+      const selection = view.state.getSelection();
+      if (selection && selection.text) {
+        const text = selection.text.trim();
+        if (text.startsWith("/*") && text.endsWith("*/")) {
+          isBoneyard = true;
+        }
+      }
+    }
+
+    menu.addItem((item: any) => {
+      item
+        .setTitle(isBoneyard ? "Restore from Boneyard" : "Send to Boneyard (In-line)")
+        .setIcon(isBoneyard ? "corner-up-left" : "archive")
+        .onClick(() => toggleBoneyardComment(view));
+    });
+    menu.addItem((item: any) => {
+      item
+        .setTitle("Move to Snippets (Library)")
+        .setIcon("scissors")
+        .onClick(() => moveSelectionToSnippets(this.app, view, true, this.settings.compatibilityMode));
+    });
+  }
+}
+
+class FountainSettingTab extends PluginSettingTab {
+  plugin: FountainPlugin;
+
+  constructor(app: App, plugin: FountainPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.createEl("h2", { text: "Fountain Plugin Settings" });
+
+    new Setting(containerEl)
+      .setName("Compatibility Mode")
+      .setDesc("Choose the default format for new documents. Beat mode enables [[colors]], [[markers]], and Beat JSON. Note: Existing documents auto-detect their own format.")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("fountain", "Standard Fountain")
+          .addOption("beat", "Beat Compatibility")
+          .setValue(this.plugin.settings.compatibilityMode)
+          .onChange(async (value: "fountain" | "beat") => {
+            this.plugin.settings.compatibilityMode = value;
+            await this.plugin.saveSettings();
+
+            // Re-render open views to reflect syntax highlighting changes, but DO NOT modify files automatically.
+            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN);
+            for (const leaf of leaves) {
+              if (leaf.view instanceof FountainView) {
+                // Trigger a full re-parse and re-render
+                leaf.view.state.update();
+                leaf.view.updateLines();
+              }
+            }
+          }),
+      );
+  }
+}
+
+/**
+ * An in-app confirmation modal that replaces window.confirm().
+ * Unlike the native OS dialog, this renders entirely within the Electron
+ * window DOM and does NOT trigger an OS-level window blur/focus steal.
+ */
+class FountainConfirmModal extends Modal {
+  private title: string;
+  private message: string;
+  private onConfirm: () => void;
+
+  constructor(app: App, title: string, message: string, onConfirm: () => void) {
+    super(app);
+    this.title = title;
+    this.message = message;
+    this.onConfirm = onConfirm;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+
+    contentEl.createEl("h2", { text: this.title });
+    contentEl.createEl("p", { text: this.message });
+
+    const buttonRow = contentEl.createDiv({ cls: "modal-button-container" });
+
+    new ButtonComponent(buttonRow)
+      .setButtonText("Cancel")
+      .onClick(() => this.close());
+
+    new ButtonComponent(buttonRow)
+      .setButtonText("Proceed")
+      .setCta()
+      .onClick(() => {
+        this.close();
+        this.onConfirm();
+      });
+  }
+
+  onClose() {
+    this.contentEl.empty();
   }
 }

@@ -50,6 +50,8 @@ export class EditorViewState implements ViewState {
    *  knows to skip `onScriptChanged` / `requestSave` and avoid re-propagating
    *  an edit that has already been distributed by the parent FountainView. */
   private syncing = false;
+  private cachedScript?: FountainScript;
+  private instanceId = Math.random().toString(36).substring(7);
 
   constructor(
     contentEl: HTMLElement,
@@ -58,8 +60,10 @@ export class EditorViewState implements ViewState {
     private callbacks: EditorCallbacks,
     spellCheckEnabled: boolean,
   ) {
+    console.log(`Fountain: Initializing EditorViewState [${this.instanceId}] for ${path}...`);
     contentEl.empty();
     const editorContainer = contentEl.createDiv("custom-editor-component");
+    editorContainer.tabIndex = -1;
 
     // our screenplay sets some of the styling information
     // before the code mirror overrides them. And instead of
@@ -125,12 +129,15 @@ export class EditorViewState implements ViewState {
     });
 
     this.cmEditor.contentDOM.spellcheck = spellCheckEnabled;
+
+    // Auto-focus on creation to prevent "phantom" cursor issues
+    this.cmEditor.focus();
+    console.log("Fountain: EditorViewState initialized and focused.");
+    // console.trace("Fountain: EditorViewState constructor stack trace");
   }
 
   receiveEdits(edits: Edit[], _newScript: FountainScript): void {
     if (edits.length === 0) return;
-    // CM treats every `from`/`to` in a batch as a pre-transaction position
-    // and expects them sorted ascending and non-overlapping.
     const changes = [...edits]
       .sort((a, b) => a.range.start - b.range.start)
       .map((e) => ({
@@ -138,18 +145,38 @@ export class EditorViewState implements ViewState {
         to: e.range.end,
         insert: e.replacement,
       }));
+
+    const wasFocused = this.cmEditor.hasFocus;
     this.syncing = true;
     try {
+      console.log(`Fountain: [${this.instanceId}] Dispatching ${changes.length} CM changes to editor... (Focused: ${wasFocused}, Selection: ${this.cmEditor.state.selection.main.head})`);
       this.cmEditor.dispatch({ changes });
+      console.log(`Fountain: [${this.instanceId}] CM changes dispatched successfully. Selection now: ${this.cmEditor.state.selection.main.head}`);
+      if (wasFocused) {
+        this.cmEditor.focus();
+      }
+    } catch (e) {
+      console.error("Fountain: CRASH during CM dispatch", e);
     } finally {
       this.syncing = false;
+    }
+
+    // Belt-and-suspenders: if a residual palette-close blur slipped through
+    // despite the rAF deferral in format_commands.ts, reclaim focus in the
+    // very next animation frame (~16ms) before the polling loop kicks in.
+    if (wasFocused) {
+      requestAnimationFrame(() => {
+        if (!this.cmEditor.hasFocus) {
+          console.log(`Fountain: [${this.instanceId}] receiveEdits: rAF focus recovery triggered.`);
+          this.cmEditor.focus();
+        }
+      });
     }
   }
 
   receiveScript(newScript: FountainScript): void {
-    // No precise edits available — full-doc replace. Cursor/undo are lost
-    // on this path by necessity (used for external reloads and for
-    // propagating user-typed edits to non-originating editors).
+    console.log(`Fountain: [${this.instanceId}] receiveScript (full-doc replace). Focused: ${this.cmEditor.hasFocus}`);
+    this.cachedScript = newScript;
     this.syncing = true;
     try {
       this.cmEditor.dispatch({
@@ -159,6 +186,11 @@ export class EditorViewState implements ViewState {
           insert: newScript.document,
         },
       });
+      console.log("Fountain: receiveScript dispatch success.");
+      // Always try to keep focus if we are in this state
+      this.cmEditor.focus();
+    } catch (e) {
+      console.error("Fountain: CRASH during receiveScript dispatch", e);
     } finally {
       this.syncing = false;
     }
@@ -172,7 +204,7 @@ export class EditorViewState implements ViewState {
     return this.cmEditor.state.doc.toString();
   }
 
-  clear(): void {}
+  clear(): void { }
 
   destroy(): void {
     this.cmEditor.destroy();
@@ -224,8 +256,26 @@ export class EditorViewState implements ViewState {
     });
   }
 
-  focus(): void {
+  focus(silent = false): void {
+    const el = this.cmEditor.contentDOM;
+    if (!silent) console.log(`Fountain: [${this.instanceId}] focus() called. Window hasFocus: ${document.hasFocus()}, DOM attached: ${this.cmEditor.dom.isConnected}, visible: ${this.cmEditor.dom.offsetParent !== null}, activeElement: ${document.activeElement?.tagName} (id: ${document.activeElement?.id}, class: ${document.activeElement?.className})`);
+
+    if (!document.hasFocus()) {
+      if (!silent) console.log(`Fountain: [${this.instanceId}] Window lost focus! Attempting window.focus()...`);
+      window.focus();
+    }
+
     this.cmEditor.focus();
+    if (!this.cmEditor.hasFocus) {
+      if (!silent) {
+        console.log(`Fountain: [${this.instanceId}] CM focus() failed. ActiveElement: ${document.activeElement?.tagName} (${(document.activeElement as any)?.className}). Window focused: ${document.hasFocus()}`);
+        console.log(`Fountain: [${this.instanceId}] trying contentDOM.focus() and manual FocusEvent...`);
+      }
+      el.focus();
+      el.dispatchEvent(new FocusEvent("focus", { bubbles: true }));
+    }
+
+    if (!silent) console.log(`Fountain: [${this.instanceId}] focus() finished. hasFocus now: ${this.cmEditor.hasFocus}, activeElement now: ${document.activeElement?.tagName} (id: ${document.activeElement?.id}, class: ${document.activeElement?.className})`);
   }
 
   setSpellCheck(enabled: boolean): void {
@@ -243,7 +293,31 @@ export class EditorViewState implements ViewState {
   spotlightCharacter(): string | null {
     return null;
   }
-  render(): void {}
+  trackFocusTime(startTime: number): void {
+    let attempts = 0;
+    const check = setInterval(() => {
+      attempts++;
+      if (this.cmEditor.hasFocus) {
+        const duration = performance.now() - startTime;
+        console.log(`Fountain: [${this.instanceId}] FOCUS REGAINED after ${duration.toFixed(2)}ms (${attempts} checks)`);
+        clearInterval(check);
+      } else {
+        // Every 2 checks (100ms), try to force focus again (SILENTLY)
+        if (attempts % 2 === 0) {
+          this.focus(true);
+        }
+        if (attempts % 20 === 0) {
+          console.log(`Fountain: [${this.instanceId}] Still waiting for focus... (Attempt ${attempts})`);
+        }
+      }
+    }, 50);
+    setTimeout(() => clearInterval(check), 60000);
+  }
+
+  render(): void {
+    console.log("Fountain: EditorViewState.render called (focusing)");
+    this.cmEditor.focus();
+  }
 
   rangeOfFirstVisibleLine(): Range | null {
     const view = this.cmEditor;
@@ -254,7 +328,7 @@ export class EditorViewState implements ViewState {
     const topThreshold = scrollerRect.top;
 
 
-    for (let i = viewport.from; i < viewport.to; ) {
+    for (let i = viewport.from; i < viewport.to;) {
       const line = view.lineBlockAt(i);
       const lineRect = view.coordsAtPos(line.from);
       // If the line's bottom is at or below the top of the scroller, it's the first visible line.
