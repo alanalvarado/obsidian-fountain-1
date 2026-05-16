@@ -1574,3 +1574,168 @@
 	}
 }
 
+
+/* Boneyard & Snippets Improvements */
+
+.snippet-search-container {
+	margin-bottom: 12px;
+}
+
+.snippet-search-input {
+	width: 100%;
+	height: 30px;
+	padding: 4px 8px;
+	font-size: 13px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+
+.snippet-category {
+	margin-bottom: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.snippet-category-header {
+	display: flex;
+	align-items: center;
+	padding: 6px 10px;
+	background-color: var(--background-secondary);
+	cursor: pointer;
+	user-select: none;
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.snippet-category-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.snippet-category-header .category-title {
+	flex: 1;
+}
+
+.snippet-category.is-collapsed .snippet-item {
+	display: none;
+}
+
+.snippet-item {
+	margin: 8px 4px;
+	padding: 12px;
+	background-color: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	transition: transform 0.1s ease, border-color 0.2s;
+}
+
+.snippet-item:hover {
+	background-color: var(--background-secondary);
+	border-color: var(--interactive-accent);
+	transform: translateY(-1px);
+}
+
+.snippet-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 6px;
+	cursor: pointer;
+}
+
+.snippet-title {
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--text-normal);
+}
+
+.snippet-actions {
+	display: flex;
+	gap: 4px;
+}
+
+.snippet-action-btn {
+	padding: 2px;
+	background: transparent;
+	border: none;
+	box-shadow: none !important;
+	cursor: pointer;
+	color: var(--text-faint);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.snippet-action-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.snippet-preview {
+	font-size: 11px;
+	color: var(--text-muted);
+	font-family: var(--screenplay-font);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	opacity: 0.8;
+}
+
+
+/* Enhanced Snippet Sidebar Styling */
+.fountain-sidebar .snippet-category { margin-bottom: 12px; }
+.fountain-sidebar .category-header { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background-color: var(--background-secondary-alt); border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); transition: background-color 0.2s; user-select: none; }
+.fountain-sidebar .category-header:hover { background-color: var(--background-modifier-hover); color: var(--text-normal); }
+.fountain-sidebar .category-Beat-JSON .category-header { border-left: 3px solid var(--interactive-accent); }
+.fountain-sidebar .category-Boneyard .category-header { border-left: 3px solid var(--text-muted); }
+.fountain-sidebar .snippet-item { margin: 4px 0 4px 12px; padding: 8px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; }
+.fountain-sidebar .snippet-item:hover { background-color: var(--background-modifier-hover); border-color: var(--background-modifier-border); }
+.fountain-sidebar .snippet-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.fountain-sidebar .snippet-title { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.fountain-sidebar .snippet-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+.fountain-sidebar .snippet-item:hover .snippet-actions { opacity: 1; }
+.fountain-sidebar .snippet-action-btn { padding: 2px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+.fountain-sidebar .snippet-action-btn:hover { color: var(--text-normal); }
+.fountain-sidebar .snippet-preview { font-family: var(--font-monospace); font-size: 0.7rem; color: var(--text-faint); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Boneyard Section Styling */
+.boneyard-item { 
+	margin: 8px 4px; 
+	padding: 10px; 
+	background-color: var(--background-secondary-alt); 
+	border: 1px solid var(--background-modifier-border); 
+	border-radius: 6px; 
+	cursor: pointer; 
+	transition: transform 0.1s ease, border-color 0.2s; 
+}
+.boneyard-item:hover { 
+	background-color: var(--background-secondary); 
+	border-color: var(--interactive-accent);
+	transform: translateY(-1px);
+}
+.boneyard-title { 
+	font-size: 0.85rem; 
+	font-weight: 600; 
+	color: var(--text-normal); 
+	display: block; 
+	white-space: nowrap; 
+	overflow: hidden; 
+	text-overflow: ellipsis;
+	margin-bottom: 4px;
+}
+.boneyard-preview { 
+	font-family: var(--font-monospace); 
+	font-size: 0.7rem; 
+	color: var(--text-faint); 
+	font-style: normal; 
+	white-space: nowrap; 
+	overflow: hidden; 
+	text-overflow: ellipsis; 
+}
+
+/* Unified Section Headers */
+.section-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background-color: var(--background-secondary-alt); cursor: pointer; user-select: none; border-top: 1px solid var(--background-modifier-border); }
+.section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-accent); letter-spacing: 0.05em; }

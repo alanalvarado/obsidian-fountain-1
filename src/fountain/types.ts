@@ -257,8 +257,13 @@ export type TitlePage = {
 // ============================================================================
 
 export interface Snippet {
+  title?: string;
+  category?: string;
+  range: Range;
   content: FountainElement[];
   pageBreak?: PageBreak;
+  text?: string;
+  index?: number;
 }
 export type Snippets = Snippet[];
 
@@ -279,8 +284,10 @@ export interface ScriptMetrics {
 export interface ScriptStructure {
   sections: StructureSection[];
   snippets: Snippets;
+  boneyard: Snippets;
   characters: CharacterStats[];
   metrics: ScriptMetrics;
+  beatMetadata?: Range;
 }
 
 // ============================================================================

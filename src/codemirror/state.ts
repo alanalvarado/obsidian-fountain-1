@@ -31,7 +31,12 @@ export const fountainScriptField = StateField.define<FountainScript>({
 
     // Re-parse on document changes
     if (tr.docChanged) {
-      return parse(tr.newDoc.toString(), {});
+      try {
+        return parse(tr.newDoc.toString(), {});
+      } catch (e) {
+        console.error("Fountain: CRASH during re-parse in StateField", e);
+        return script; // Fallback to old script
+      }
     }
 
     return script;

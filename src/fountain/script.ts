@@ -10,7 +10,7 @@ import type {
   TextElementWithNotesAndBoneyard,
   TitlePage,
 } from "./types";
-import { StructureScene, StructureSection } from "./types";
+import { StructureScene, StructureSection, computeRange } from "./types";
 import {
   applyDualPairing,
   filterDialogueContent,
@@ -18,6 +18,7 @@ import {
   mergeConsecutiveActions,
 } from "./utils";
 import { calculateMetrics } from "./metrics";
+import { getActiveAdapter } from "../compatibility/registry";
 
 export class FountainScript {
   readonly titlePage: TitlePage | null;
@@ -25,6 +26,7 @@ export class FountainScript {
   readonly document: string;
   readonly allCharacters: Set<string>;
   readonly characterStats: Map<string, number>;
+  readonly detectedFormat: "beat" | "fountain" | "unknown";
 
   constructor(
     document: string,
@@ -34,6 +36,13 @@ export class FountainScript {
     this.document = document;
     this.titlePage = titlePage;
     this.script = applyDualPairing(mergeConsecutiveActions(script));
+    
+    // Detect format before processing AST so the registry uses the correct adapter
+    this.detectedFormat = this.detectFormat();
+
+    // Process AST with active adapter
+    getActiveAdapter(this).processAST(this);
+
     const characters = new Set<string>();
     const stats = new Map<string, number>();
     for (const el of this.script) {
@@ -50,6 +59,25 @@ export class FountainScript {
     }
     this.allCharacters = characters;
     this.characterStats = stats;
+  }
+
+  private detectFormat(): "beat" | "fountain" | "unknown" {
+    // Check for Beat signatures
+    if (
+      this.document.includes("/* BEAT:") ||
+      /\[\[COLOR\s+/i.test(this.document) ||
+      /\[\[marker\s+/i.test(this.document) ||
+      /\[\[sinopsis\]\]/i.test(this.document)
+    ) {
+      return "beat";
+    }
+
+    // Check for Standard Fountain Snippets signature
+    if (/# Snippets/i.test(this.document)) {
+      return "fountain";
+    }
+
+    return "unknown";
   }
 
   /** Extract text from the fountain document. */
@@ -201,14 +229,113 @@ export class FountainScript {
       }
     }
 
+    // Detect all Beat metadata comments
+    const beatMetadataRanges: Range[] = [];
+    this.script.forEach((fe) => {
+      if (fe.kind === "action") {
+        fe.lines.forEach((line) => {
+          line.elements.forEach((el) => {
+            if (el.kind === "boneyard") {
+              const content = this.sliceDocument(el.range);
+              if (content.includes("BEAT:") && content.includes("END_BEAT")) {
+                beatMetadataRanges.push(el.range);
+              }
+            }
+          });
+        });
+      }
+    });
+
+    const boneyard = this.findBoneyardBlocks(mainElements);
+    const snippets = [
+      ...this.parseSnippets(snippetElements),
+      ...this.parseBeatSnippets(beatMetadataRanges),
+    ];
+
     return {
       sections,
-      snippets: this.parseSnippets(snippetElements),
+      snippets,
+      boneyard,
       characters: Array.from(this.characterStats.entries())
         .map(([name, dialogueCount]) => ({ name, dialogueCount }))
         .sort((a, b) => b.dialogueCount - a.dialogueCount),
       metrics,
+      beatMetadata: beatMetadataRanges.length > 0 ? computeRange(beatMetadataRanges[0], beatMetadataRanges[beatMetadataRanges.length - 1]) : null,
+      beatMetadataRanges, // All blocks
     };
+  }
+
+  private findBoneyardBlocks(elements: FountainElement[]): Snippets {
+    const blocks: Snippets = [];
+    const visited = new Set<string>();
+
+    const checkElement = (el: any, parent: any) => {
+      const key = `${el.range.start}-${el.range.end}`;
+      if (visited.has(key)) return;
+      
+      if (el.kind === "boneyard") {
+        visited.add(key);
+        const content = this.sliceDocument(el.range);
+        if (content.includes("BEAT:") && content.includes("END_BEAT"))
+          return;
+
+        blocks.push({
+          category: "Boneyard",
+          title:
+            content.replace(/\/\*|\*\//g, "").trim().slice(0, 50) +
+            (content.length > 50 ? "..." : ""),
+          range: el.range,
+          content: [parent || el],
+        });
+      }
+      
+      // Recursive check for elements like "action" which have children
+      if (el.lines) {
+        el.lines.forEach((line: any) => {
+          if (line.elements) {
+            line.elements.forEach((child: any) => checkElement(child, el));
+          }
+        });
+      }
+
+      // Recursive check for dialogue content
+      if (el.content) {
+        el.content.forEach((c: any) => {
+          if (c.line && c.line.elements) {
+            c.line.elements.forEach((child: any) => checkElement(child, el));
+          }
+        });
+      }
+    };
+
+    elements.forEach(fe => checkElement(fe, null));
+    return blocks;
+  }
+
+  private parseBeatSnippets(metadataRanges: Range[]): Snippets {
+    const allSnippets: Snippets = [];
+    metadataRanges.forEach((range) => {
+      const content = this.sliceDocument(range);
+      const jsonMatch = content.match(/({[\s\S]*})/);
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          if (data.Snippets && Array.isArray(data.Snippets)) {
+            data.Snippets.forEach((s: any, i: number) => {
+              allSnippets.push({
+                title: s.title || "Untitled",
+                category: "Beat JSON",
+                range: range,
+                content: [],
+                text: s.text || "",
+                index: i,
+              });
+            });
+          }
+        } catch (e) {}
+      }
+    });
+    return allSnippets;
   }
 
   /** Split `script` at the first depth-≤-3 `# … Snippets …` section.
@@ -229,12 +356,44 @@ export class FountainScript {
   private parseSnippets(elements: FountainElement[]): Snippets {
     const snippets: Snippets = [];
     let currentContent: FountainElement[] = [];
+    let currentCategory: string | undefined = undefined;
+    let currentTitle: string | undefined = undefined;
 
     for (const fe of elements) {
+      // Exclude Beat metadata from being treated as a snippet
+      if (fe.kind === "action" && fe.lines.some(l => l.elements.some(e => {
+        if (e.kind !== "boneyard") return false;
+        const content = this.sliceDocument(e.range);
+        return content.includes("BEAT:") && content.includes("END_BEAT");
+      }))) {
+        continue;
+      }
+
+      if (fe.kind === "section") {
+        if (fe.depth === 2) {
+          currentCategory = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
+          currentTitle = undefined;
+          continue;
+        } else if (fe.depth === 3) {
+          currentTitle = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
+          continue;
+        }
+      }
+
       if (fe.kind === "page-break") {
         if (currentContent.length > 0) {
-          snippets.push({ content: currentContent, pageBreak: fe });
+          snippets.push({
+            title: currentTitle,
+            category: currentCategory,
+            range: computeRange(
+              currentContent[0].range,
+              currentContent[currentContent.length - 1].range,
+            ),
+            content: currentContent,
+            pageBreak: fe,
+          });
           currentContent = [];
+          currentTitle = undefined;
         }
       } else {
         currentContent.push(fe);
@@ -242,7 +401,15 @@ export class FountainScript {
     }
 
     if (currentContent.length > 0) {
-      snippets.push({ content: currentContent });
+      snippets.push({
+        title: currentTitle,
+        category: currentCategory,
+        range: computeRange(
+          currentContent[0].range,
+          currentContent[currentContent.length - 1].range,
+        ),
+        content: currentContent,
+      });
     }
 
     return snippets;

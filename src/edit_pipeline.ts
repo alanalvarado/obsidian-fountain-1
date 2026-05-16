@@ -37,7 +37,12 @@ export async function applyEditsToFountainFile(
   for (const view of views) {
     view.receiveProgrammaticEdits(edits, newScript);
   }
-  await app.vault.modify(file, newText);
+
+  // Defer disk write to avoid immediate window blur/blackout
+  setTimeout(async () => {
+    console.log(`Fountain: Deferring vault modify for ${path} to avoid window blur...`);
+    await app.vault.modify(file, newText);
+  }, 1500);
 }
 
 export function findFountainViewsForPath(

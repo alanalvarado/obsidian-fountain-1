@@ -29,21 +29,7 @@ export function mkRange(loc: {
   return { start: loc.start.offset, end: loc.end.offset };
 }
 
-/**
- * Extracts a color tag from text in BEAT-compatible format.
- * Supports: [[blue]], [[COLOR CYAN]], [[#ff0000]]
- * Returns the color and the cleaned text (with tag removed).
- */
-export function extractColor(text: string): { color?: string; cleanText: string } {
-  const match = text.match(/\[\[(?:COLOR\s+)?([a-zA-Z]+|#[a-fA-F0-9]{3,6})\]\]/i);
-  if (match) {
-    return {
-      color: match[1].toLowerCase(),
-      cleanText: text.replace(match[0], "").trim(),
-    };
-  }
-  return { cleanText: text };
-}
+
 
 export function mkText(range: Range): BasicTextElement {
   return { kind: "text", range };
@@ -134,8 +120,7 @@ export function mkScene(
   forced: boolean,
   number: Range | null,
 ): SceneHeading {
-  const { color, cleanText } = extractColor(heading);
-  return { kind: "scene", range, heading: cleanText, forced, number, color };
+  return { kind: "scene", range, heading, forced, number };
 }
 
 export function mkTransition(range: Range, forced: boolean): Transition {
@@ -165,8 +150,7 @@ export function mkSection(
   depth: number,
   text?: string,
 ): Section {
-  const { color, cleanText } = text ? extractColor(text) : { color: undefined, cleanText: undefined };
-  return { kind: "section", range, depth, color, text: cleanText };
+  return { kind: "section", range, depth, text };
 }
 
 export function mkLyrics(range: Range, lines: Line[]): Lyrics {

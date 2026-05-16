@@ -118,6 +118,22 @@ export class FountainView extends TextFileView {
       },
     );
     this.stopRehearsalModeAction.hide();
+
+    this.contentEl.addEventListener("contextmenu", (evt) => {
+      if (this.isEditMode()) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        
+        const menu = new Menu();
+        // Trigger a custom event to avoid crashing other plugins that expect an Editor
+        this.app.workspace.trigger("fountain-menu", menu, this);
+
+        // Show the menu at the mouse position
+        if (menu.items.length > 0) {
+          menu.showAtMouseEvent(evt);
+        }
+      }
+    }, true);
   }
 
   private readonlyCallbacks(): ReadonlyViewCallbacks {
@@ -128,6 +144,7 @@ export class FountainView extends TextFileView {
       startReadingModeHere: (r) => this.state.scrollToHere(r),
       requestSave: () => this.requestSave(),
       replaceText: (r, s) => this.replaceText(r, s),
+      insertTextAtCursor: (s) => this.insertTextAtCursor(s),
       navigateToSceneContent: (r) => this.navigateToSceneContent(r),
       insertSceneAt: (pos) => this.insertSceneAt(pos),
       insertSectionAt: (pos) => this.insertSectionAt(pos),
@@ -503,6 +520,19 @@ export class FountainView extends TextFileView {
     this.applyEditsToFile([{ range, replacement }]);
   }
 
+  insertTextAtCursor(text: string): void {
+    if (this.state instanceof EditorViewState) {
+      const selection = this.state.getSelection();
+      const pos = selection ? selection.from : this.cachedScript.document.length;
+      this.replaceText(
+        { start: pos, end: selection ? selection.to : pos },
+        text,
+      );
+    } else {
+      new Notice("Must be in Edit mode to insert text.");
+    }
+  }
+
   /**
    * Move a scene from one file to another. When src and dst are the same
    * file the two edits are sent through a single `applyEditsToFile` call
@@ -547,6 +577,7 @@ export class FountainView extends TextFileView {
   }
 
   toggleEditMode() {
+    console.log(`Fountain: toggleEditMode. Current mode: ${this.state.isEditMode ? "Edit" : "Readonly"}`);
     const text = this.state.getViewData();
     const firstVisibleLine = this.state.rangeOfFirstVisibleLine();
     if (this.state.isEditMode) {
@@ -700,11 +731,22 @@ export class FountainView extends TextFileView {
       }
       return;
     }
-    const newScript = parse(data, {});
-    for (const view of findFountainViewsForPath(this.app, path)) {
-      view.cachedScript = newScript;
-      view.state.setPath(path);
-      view.state.receiveScript(newScript);
+    try {
+      const newScript = parse(data, {});
+      if (this.cachedScript.document !== data) {
+         console.log(`Fountain: setViewData mismatch! Cached: ${this.cachedScript.document.length}, Disk: ${data.length}`);
+         if (this.cachedScript.document.length === data.length) {
+            console.log("Fountain: Lengths match but content differs. Possible normalization issue?");
+         }
+      }
+      for (const view of findFountainViewsForPath(this.app, path)) {
+        console.log(`Fountain: Updating view state for ${view.file?.path}`);
+        view.cachedScript = newScript;
+        view.state.setPath(path);
+        view.state.receiveScript(newScript);
+      }
+    } catch (e) {
+      console.error("Fountain: CRASH during setViewData parse/update", e);
     }
   }
 
@@ -724,6 +766,7 @@ export class FountainView extends TextFileView {
   /// setState is called when the workspace.json deserialisation ran into
   /// a view of type fountain, it should restore the workspace.
   async setState(f: Record<string, unknown>, result: ViewStateResult) {
+    console.log("Fountain: setState called", f);
     await super.setState(f, result);
     // Mark this state change as a navigation event so the leaf records
     // it in its back/forward stack — without this, opening a different

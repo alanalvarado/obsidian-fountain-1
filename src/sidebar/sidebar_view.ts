@@ -1,4 +1,4 @@
-import { ItemView, TFile, type WorkspaceLeaf, debounce } from "obsidian";
+import { App, ItemView, Menu, Modal, Setting, TFile, type WorkspaceLeaf, debounce, setIcon } from "obsidian";
 import { findFountainViewsForPath } from "../edit_pipeline";
 import {
   type FountainScript,
@@ -14,6 +14,10 @@ import { FountainView } from "../views/fountain_view";
 import { renderElement } from "../views/reading_view";
 import { getScenePreview } from "../views/render_tools";
 import { styledTextToHtml } from "../views/styled_text";
+import { moveSelectionToSnippets } from "../commands/format_commands";
+import { BeatAdapter } from "../compatibility/beat_adapter";
+import { FountainAdapter } from "../compatibility/fountain_adapter";
+import { getActiveAdapter } from "../compatibility/registry";
 
 export const VIEW_TYPE_SIDEBAR = "fountain-sidebar";
 
@@ -33,6 +37,12 @@ interface SidebarCallbacks {
   }) => void;
   reRender: () => void;
   requestSave: () => void;
+  replaceText: (range: Range, replacement: string) => void;
+  insertTextAtCursor: (text: string) => void;
+  getScript: () => FountainScript;
+  app: App;
+  focusEditor: () => void;
+  getView: () => FountainView | null;
 }
 
 abstract class SidebarSection {
@@ -48,6 +58,27 @@ abstract class SidebarSection {
     isEditMode: boolean,
     path: string,
   ): void;
+}
+
+class ModeSection extends SidebarSection {
+  render(
+    container: HTMLElement,
+    script: FountainScript,
+    _isEditMode: boolean,
+    _path: string,
+  ): void {
+    const isBeat = getActiveAdapter(script) instanceof BeatAdapter;
+    const modeName = isBeat ? "BEAT APP" : "FOUNTAIN NATIVE";
+
+    container.createDiv({ cls: ["metrics-section", "mode-section"] }, (div) => {
+      div.createDiv({ cls: "metrics-header", text: "COMPATIBILITY" });
+      div.createDiv({ 
+        cls: "metric-value", 
+        text: modeName,
+        attr: { style: "font-size: 14px; text-align: center; margin-top: 4px;" } 
+      });
+    });
+  }
 }
 
 class MetricsSection extends SidebarSection {
@@ -107,7 +138,144 @@ class MetricsSection extends SidebarSection {
   }
 }
 
+class RenameModal extends Modal {
+  private result: string;
+  constructor(app: App, private initialValue: string, private onSubmit: (value: string) => void) {
+    super(app);
+    this.result = initialValue;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h1", { text: "Rename Snippet" });
+
+    new Setting(contentEl)
+      .setName("New title")
+      .addText((text) =>
+        text
+          .setValue(this.initialValue)
+          .onChange((value) => {
+            this.result = value;
+          })
+          .inputEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              this.close();
+              this.onSubmit(this.result);
+            }
+          })
+      );
+
+    new Setting(contentEl).addButton((btn) =>
+      btn
+        .setButtonText("Rename")
+        .setCta()
+        .onClick(() => {
+          this.close();
+          this.onSubmit(this.result);
+        })
+    );
+  }
+
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+}
+
+class BoneyardSection extends SidebarSection {
+  private collapsed = false;
+
+  render(
+    container: HTMLElement,
+    script: FountainScript,
+    _isEditMode: boolean,
+    _path: string,
+  ): void {
+    const structure = script.structure();
+    const boneyard = structure.boneyard || [];
+
+    container.createDiv({ cls: ["metrics-section", "boneyard-container", this.collapsed ? "is-collapsed" : ""] }, (sectionDiv) => {
+      sectionDiv.createDiv({ cls: "metrics-header", text: "BONEYARD" }).addEventListener("click", () => {
+        this.collapsed = !this.collapsed;
+        this.callbacks.reRender();
+      });
+
+      if (boneyard.length === 0) {
+        sectionDiv.createEl("div", {
+          text: "No in-line boneyard found",
+          cls: "snippets-instruction",
+        });
+        return;
+      }
+
+      if (!this.collapsed) {
+        boneyard.forEach((block, i) => {
+          sectionDiv.createDiv({ cls: "boneyard-item" }, (item) => {
+            item.createSpan({ text: block.title || `Omission ${i + 1}`, cls: "boneyard-title" });
+            
+            item.addEventListener("click", () => {
+              this.callbacks.scrollToRange(block.range);
+            });
+
+            item.addEventListener("contextmenu", (evt) => {
+              evt.preventDefault();
+              const menu = new Menu();
+              
+              menu.addItem((mitem) => {
+                mitem
+                  .setTitle("Jump to Script")
+                  .setIcon("arrow-up-right")
+                  .onClick(() => this.callbacks.scrollToRange(block.range));
+              });
+
+              menu.addSeparator();
+
+              menu.addItem((mitem) => {
+                mitem
+                  .setTitle("Restore to Script")
+                  .setIcon("corner-up-left")
+                  .onClick(() => {
+                    const fullText = script.sliceDocument(block.range);
+                    let newText = fullText;
+                    if (fullText.startsWith("/*") && fullText.endsWith("*/")) {
+                      newText = fullText.slice(2, -2).trim();
+                    }
+                    this.callbacks.replaceText(block.range, newText);
+                    this.callbacks.requestSave();
+                    this.callbacks.reRender();
+                    this.callbacks.focusEditor();
+                  });
+              });
+
+              menu.addItem((mitem) => {
+                mitem
+                  .setTitle("Delete Omission")
+                  .setIcon("trash")
+                  .onClick(() => {
+                    if (confirm("Are you sure you want to delete this boneyard omission?")) {
+                      this.callbacks.replaceText(block.range, "");
+                      this.callbacks.requestSave();
+                      this.callbacks.reRender();
+                    }
+                  });
+              });
+
+              menu.showAtMouseEvent(evt);
+            });
+
+            const previewText = script.sliceDocument(block.range).replace(/\/\*|\*\//g, "").trim().slice(0, 80);
+            item.createDiv({ cls: "boneyard-preview", text: previewText + (previewText.length >= 80 ? "..." : "") });
+          });
+        });
+      }
+    });
+  }
+}
+
 class SnippetsSection extends SidebarSection {
+  private searchQuery = "";
+  private collapsedCategories = new Set<string>();
+
   render(
     container: HTMLElement,
     script: FountainScript,
@@ -116,12 +284,27 @@ class SnippetsSection extends SidebarSection {
   ): void {
     const structure = script.structure();
     const hasSnippets = structure.snippets && structure.snippets.length > 0;
-    if (!hasSnippets && !isEditMode) return;
-
+    
     container.createDiv(
-      { cls: hasSnippets ? "snippets-section" : "snippets-section-empty" },
+      { cls: ["metrics-section", "snippets-container"] },
       (sectionDiv) => {
         sectionDiv.addClass("screenplay-snippets");
+        
+        sectionDiv.createDiv({ cls: "metrics-header", text: "SNIPPETS" });
+
+        // Add search bar
+        if (hasSnippets) {
+          sectionDiv.createDiv({ cls: "snippet-search-container" }, (searchDiv) => {
+            const input = searchDiv.createEl("input", {
+              attr: { type: "text", placeholder: "Search snippets...", value: this.searchQuery },
+              cls: "snippet-search-input",
+            });
+            input.addEventListener("input", (e) => {
+              this.searchQuery = (e.target as HTMLInputElement).value;
+              this.callbacks.reRender();
+            });
+          });
+        }
 
         // Add drop handling
         sectionDiv.addEventListener("dragover", (event) => {
@@ -134,14 +317,9 @@ class SnippetsSection extends SidebarSection {
         });
 
         sectionDiv.addEventListener("drop", async (event) => {
-          // preventDefault must run synchronously, before any await, so the
-          // browser doesn't fall back to its default drop handling.
           event.preventDefault();
           sectionDiv.removeClass("drag-over");
 
-          // Index card drags carry an application/json payload of
-          // {path, range}; the source file may differ from the active
-          // (destination) file. Snippet-to-snippet drags use text/plain.
           const json = event.dataTransfer?.getData("application/json");
           if (json) {
             try {
@@ -151,33 +329,40 @@ class SnippetsSection extends SidebarSection {
               };
               const text = await this.callbacks.readFromFile(path, range);
               if (text) {
-                this.callbacks.insertAfterSnippetsHeader(
-                  `${text}\n\n===\n\n`,
-                );
+                this.callbacks.insertAfterSnippetsHeader(text);
               }
             } catch {
-              // Malformed JSON — fall through to text/plain handling.
             }
             return;
           }
 
           const droppedText = event.dataTransfer?.getData("text/plain");
           if (droppedText) {
-            this.callbacks.insertAfterSnippetsHeader(
-              `${droppedText}\n\n===\n\n`,
-            );
+            this.callbacks.insertAfterSnippetsHeader(droppedText);
           }
         });
 
         if (hasSnippets) {
-          sectionDiv.createEl("div", {
-            text: "Snippets",
-            cls: "snippets-instruction",
+          const filteredSnippets = structure.snippets.filter(s => {
+            if (!this.searchQuery) return true;
+            const q = this.searchQuery.toLowerCase();
+            const content = s.content.map(el => script.sliceDocument(el.range)).join(" ").toLowerCase();
+            return (s.title?.toLowerCase().includes(q) || 
+                    s.category?.toLowerCase().includes(q) || 
+                    content.includes(q));
           });
 
-          for (let i = 0; i < structure.snippets.length; i++) {
-            const snippet = structure.snippets[i];
-            this.renderSnippet(sectionDiv, script, snippet, i);
+          if (filteredSnippets.length === 0) {
+             sectionDiv.createEl("div", {
+              text: "No matches found",
+              cls: "snippets-instruction",
+            });
+            return;
+          }
+
+          // Render all snippets directly as a list (no categories)
+          for (let i = 0; i < filteredSnippets.length; i++) {
+            this.renderSnippet(sectionDiv, script, filteredSnippets[i], i);
           }
         } else {
           sectionDiv.createEl("div", {
@@ -195,53 +380,87 @@ class SnippetsSection extends SidebarSection {
     snippet: Snippet,
     index: number,
   ): void {
-    const snippetRange =
-      snippet.content.length > 0
-        ? {
-            start: snippet.content[0].range.start,
-            end: snippet.content[snippet.content.length - 1].range.end,
+    parent.createDiv({ cls: "snippet-item" }, (snippetDiv) => {
+      snippetDiv.createDiv({ cls: "snippet-header" }, (header) => {
+        header.createSpan({ text: snippet.title || `Snippet ${index + 1}`, cls: "snippet-title" });
+        
+        header.addEventListener("click", () => {
+          if (snippet.category === "Beat JSON" && snippet.text) {
+            this.callbacks.insertTextAtCursor(snippet.text);
+          } else {
+            this.callbacks.scrollToRange(snippet.range);
           }
-        : { start: 0, end: 0 };
+        });
 
-    parent.createDiv(
-      {
-        cls: ["snippet"],
-        attr: {
-          draggable: "true",
-          ...dataRange(snippetRange),
-        },
-      },
-      (snippetDiv) => {
-        // Add click handler to scroll to snippet location
-        if (snippet.content.length > 0) {
-          snippetDiv.addEventListener("click", (evt) => {
-            // Don't scroll if we started a drag
-            if (evt.defaultPrevented) return;
-            this.callbacks.scrollToRange(snippetRange);
+        snippetDiv.addEventListener("contextmenu", (evt) => {
+          evt.preventDefault();
+          const menu = new Menu();
+
+          menu.addItem((mitem) => {
+            mitem
+              .setTitle(snippet.category === "Beat JSON" ? "Insert Snippet" : "Jump to Script")
+              .setIcon(snippet.category === "Beat JSON" ? "plus-circle" : "arrow-up-right")
+              .onClick(() => {
+                if (snippet.category === "Beat JSON" && snippet.text) {
+                  this.callbacks.insertTextAtCursor(snippet.text);
+                } else {
+                  this.callbacks.scrollToRange(snippet.range);
+                }
+              });
           });
-          snippetDiv.style.cursor = "pointer";
+
+          menu.addItem((mitem) => {
+            mitem
+              .setTitle("Rename Snippet")
+              .setIcon("pencil")
+              .onClick(() => this.renameSnippet(snippet));
+          });
+
+          menu.addSeparator();
+
+          menu.addItem((mitem) => {
+            mitem
+              .setTitle("Delete Snippet")
+              .setIcon("trash")
+              .onClick(() => this.deleteSnippet(snippet));
+          });
+
+          menu.showAtMouseEvent(evt);
+        });
+      });
+
+      snippetDiv.createDiv({ cls: "snippet-preview" }, (preview) => {
+        // Just show first line of content
+        if (snippet.content.length > 0) {
+          const firstLine = script.sliceDocument(snippet.content[0].range).trim().slice(0, 100);
+          preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
         }
+      });
+    });
+  }
 
-        // Add drag handlers
-        snippetDiv.addEventListener("dragstart", (evt: DragEvent) => {
-          if (!evt.dataTransfer) return;
+  private renameSnippet(snippet: Snippet) {
+    new RenameModal(this.callbacks.app, snippet.title || "", (newTitle) => {
+      const view = this.callbacks.getView();
+      if (!view) return;
+      const adapter = snippet.category === "Beat JSON" ? new BeatAdapter() : new FountainAdapter();
+      adapter.renameSnippet(view, snippet, newTitle);
+      
+      this.callbacks.requestSave();
+      this.callbacks.reRender();
+    }).open();
+  }
 
-          // Get the actual snippet text content
-          const snippetText = this.callbacks.getText(snippetRange);
-          if (!snippetText) return;
-
-          evt.dataTransfer.clearData();
-          evt.dataTransfer.setData("text/plain", snippetText);
-        });
-
-        snippetDiv.createDiv({ cls: ["screenplay"] }, (div) => {
-          // Render all snippet content - CSS max-height will handle truncation
-          for (const element of snippet.content) {
-            renderElement(div, element, script, {});
-          }
-        });
-      },
-    );
+  private deleteSnippet(snippet: Snippet) {
+    if (!confirm("Are you sure you want to delete this snippet?")) return;
+    
+    const view = this.callbacks.getView();
+    if (!view) return;
+    const adapter = snippet.category === "Beat JSON" ? new BeatAdapter() : new FountainAdapter();
+    adapter.deleteSnippet(view, snippet);
+    
+    this.callbacks.requestSave();
+    this.callbacks.reRender();
   }
 }
 
@@ -255,7 +474,8 @@ class TocSection extends SidebarSection {
     _isEditMode: boolean,
     path: string,
   ): void {
-    container.createDiv({ cls: "toc-section" }, (sectionDiv) => {
+    container.createDiv({ cls: ["metrics-section", "toc-container"] }, (sectionDiv) => {
+      sectionDiv.createDiv({ cls: "metrics-header", text: "TABLE OF CONTENT" });
       sectionDiv.createDiv({ cls: "screenplay-toc" }, (div) => {
         div.createDiv({ cls: "toc-controls" }, (tocControls) => {
           tocControls.createEl(
@@ -504,6 +724,16 @@ class TocSection extends SidebarSection {
       el.classList.remove("drop-below");
     }
   }
+
+  private theFountainView(): FountainView | null {
+    const leaf = this.callbacks.app.workspace.getMostRecentLeaf(
+      this.callbacks.app.workspace.rootSplit,
+    );
+    if (leaf && leaf.view instanceof FountainView) {
+      return leaf.view;
+    }
+    return null;
+  }
 }
 
 class CharactersSection extends SidebarSection {
@@ -517,13 +747,10 @@ class CharactersSection extends SidebarSection {
     const characters = structure.characters;
     if (characters.length === 0) return;
 
-    container.createDiv({ cls: "characters-section" }, (sectionDiv) => {
+    container.createDiv({ cls: ["metrics-section", "characters-container"] }, (sectionDiv) => {
       sectionDiv.addClass("screenplay-characters");
 
-      sectionDiv.createEl("div", {
-        text: "Characters",
-        cls: "characters-instruction",
-      });
+      sectionDiv.createDiv({ cls: "metrics-header", text: "CHARACTERS" });
 
       const activeChar = this.callbacks.getSpotlightCharacter();
 
@@ -561,26 +788,41 @@ export class FountainSideBarView extends ItemView {
     super(leaf);
     this.updateToc = debounce(() => this.render(), 500, true);
 
-    const callbacks: SidebarCallbacks = {
+    this.sections = [
+      new ModeSection(this.callbacks()),
+      new MetricsSection(this.callbacks()),
+      new TocSection(this.callbacks()),
+      new CharactersSection(this.callbacks()),
+      new BoneyardSection(this.callbacks()),
+      new SnippetsSection(this.callbacks()),
+    ];
+  }
+
+  private callbacks(): SidebarCallbacks {
+    return {
       scrollToRange: (range: Range) => this.scrollActiveScriptToHere(range),
       getText: (range: Range) => this.getText(range),
+      getScript: () =>
+        this.theFountainView()?.getScript() ??
+        ({ error: "No script" } as any),
       readFromFile: (path: string, range: Range) =>
         this.readFromFile(path, range),
       insertAfterSnippetsHeader: (text: string) =>
         this.insertAfterSnippetsHeader(text),
       toggleSpotlight: (character: string) => this.toggleSpotlight(character),
-      getSpotlightCharacter: () => this.theFountainView()?.spotlightCharacter() ?? null,
+      getSpotlightCharacter: () =>
+        this.theFountainView()?.spotlightCharacter() ?? null,
       moveSceneAcross: (args) => this.moveSceneAcross(args),
       reRender: () => this.render(),
       requestSave: () => this.app.workspace.requestSaveLayout(),
+      replaceText: (range: Range, replacement: string) =>
+        this.theFountainView()?.replaceText(range, replacement),
+      insertTextAtCursor: (text: string) =>
+        this.theFountainView()?.insertTextAtCursor(text),
+      app: this.app,
+      focusEditor: () => this.theFountainView()?.focusEditor(),
+      getView: () => this.theFountainView() || null,
     };
-
-    this.sections = [
-      new MetricsSection(callbacks),
-      new TocSection(callbacks),
-      new CharactersSection(callbacks),
-      new SnippetsSection(callbacks),
-    ];
   }
 
   /** Read a slice of text from `path`, preferring an open FountainView's
@@ -664,40 +906,20 @@ export class FountainSideBarView extends ItemView {
     return ft?.getText(range) ?? "";
   }
 
-  private insertAfterSnippetsHeader(text: string) {
+  /**
+   * Appends text to the snippets library, respecting the current storage mode.
+   */
+  private async insertAfterSnippetsHeader(text: string) {
     const ft = this.theFountainView();
     if (!ft) return;
 
     const script = ft.getScript();
     if ("error" in script) return;
 
-    // Find the "# Snippets" header position
-    let snippetsHeaderEnd: number | null = null;
-    for (const element of script.script) {
-      if (element.kind === "section") {
-        const sectionText = script.document.slice(
-          element.range.start,
-          element.range.end,
-        );
-        if (sectionText.toLowerCase().includes("snippets")) {
-          snippetsHeaderEnd = element.range.end;
-          break;
-        }
-      }
-    }
+    const isBeat = getActiveAdapter(script) instanceof BeatAdapter;
+    const storage = isBeat ? "beat" : "fountain";
 
-    if (snippetsHeaderEnd !== null) {
-      // Insert text right after the snippets header
-      ft.replaceText(
-        { start: snippetsHeaderEnd, end: snippetsHeaderEnd },
-        `\n\n${text}`,
-      );
-    } else {
-      // If no snippets section exists, add it at the end
-      const docLength = script.document.length;
-      const snippetsSection = `\n\n# Boneyard\n# Snippets\n${text}`;
-      ft.replaceText({ start: docLength, end: docLength }, snippetsSection);
-    }
+    await moveSelectionToSnippets(this.app, ft, false, storage, text);
   }
 
   private toggleSpotlight(character: string) {
