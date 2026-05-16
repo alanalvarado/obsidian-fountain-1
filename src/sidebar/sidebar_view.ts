@@ -1,4 +1,4 @@
-import { App, ItemView, Menu, Modal, Setting, TFile, type WorkspaceLeaf, debounce, setIcon } from "obsidian";
+import { App, ItemView, Menu, Modal, Setting, TFile, type WorkspaceLeaf, debounce, setIcon, Notice } from "obsidian";
 import { findFountainViewsForPath } from "../edit_pipeline";
 import { FountainConfirmModal } from "../modals/confirm_modal";
 import {
@@ -19,13 +19,13 @@ import { moveSelectionToSnippets } from "../commands/format_commands";
 import { BeatAdapter } from "../compatibility/beat_adapter";
 import { FountainAdapter } from "../compatibility/fountain_adapter";
 import { getActiveAdapter } from "../compatibility/registry";
+import { sanitizeSnippets } from "../fountain/sanitizer";
 
 export const VIEW_TYPE_SIDEBAR = "fountain-sidebar";
 
 interface SidebarCallbacks {
   scrollToRange: (range: Range) => void;
   getText: (range: Range) => string;
-  /** Read text from any fountain file (open or not) at the given range. */
   readFromFile: (path: string, range: Range) => Promise<string | null>;
   insertAfterSnippetsHeader: (text: string) => void;
   toggleSpotlight: (character: string) => void;
@@ -280,39 +280,94 @@ class BoneyardSection extends SidebarSection {
 
 class SnippetsSection extends SidebarSection {
   private searchQuery = "";
-  private collapsedCategories = new Set<string>();
 
   render(
     container: HTMLElement,
     script: FountainScript,
-    isEditMode: boolean,
-    path: string,
+    _isEditMode: boolean,
+    _path: string,
   ): void {
     const structure = script.structure();
     const hasSnippets = structure.snippets && structure.snippets.length > 0;
     
     container.createDiv(
-      { cls: ["metrics-section", "snippets-container"] },
+      { cls: ["metrics-section", "snippets-container", !hasSnippets ? "is-empty" : ""] },
       (sectionDiv) => {
         sectionDiv.addClass("screenplay-snippets");
+        sectionDiv.addClass("sidebar-flex-container"); // New flex wrapper
         
         sectionDiv.createDiv({ cls: "metrics-header", text: "SNIPPETS" });
 
-        // Add search bar
-        if (hasSnippets) {
-          sectionDiv.createDiv({ cls: "snippet-search-container" }, (searchDiv) => {
-            const input = searchDiv.createEl("input", {
-              attr: { type: "text", placeholder: "Search snippets...", value: this.searchQuery },
-              cls: "snippet-search-input",
+        // Content Area (Scrollable)
+        sectionDiv.createDiv({ cls: "sidebar-content-area" }, (contentArea) => {
+          // Add search bar
+          if (hasSnippets) {
+            contentArea.createDiv({ cls: "snippet-search-container" }, (searchDiv) => {
+              const input = searchDiv.createEl("input", {
+                attr: { type: "text", placeholder: "Search snippets...", value: this.searchQuery },
+                cls: "snippet-search-input",
+              });
+              input.addEventListener("input", (e) => {
+                this.searchQuery = (e.target as HTMLInputElement).value;
+                this.callbacks.reRender();
+              });
             });
-            input.addEventListener("input", (e) => {
-              this.searchQuery = (e.target as HTMLInputElement).value;
-              this.callbacks.reRender();
-            });
-          });
-        }
+          }
 
-        // Add drop handling
+          if (hasSnippets) {
+            const filteredSnippets = structure.snippets.filter(s => {
+              if (!this.searchQuery) return true;
+              const q = this.searchQuery.toLowerCase();
+              const content = s.content.map(el => script.sliceDocument(el.range)).join(" ").toLowerCase();
+              return (s.title?.toLowerCase().includes(q) || 
+                      s.category?.toLowerCase().includes(q) || 
+                      content.includes(q));
+            });
+
+            if (filteredSnippets.length === 0) {
+              contentArea.createEl("div", {
+                text: "No matches found",
+                cls: "snippets-instruction",
+              });
+            } else {
+              for (let i = 0; i < filteredSnippets.length; i++) {
+                this.renderSnippet(contentArea, script, filteredSnippets[i], i);
+              }
+            }
+          } else {
+            // No central instruction here anymore, it's moved to the status bar
+          }
+        });
+
+        // Footer / Status Bar (Pinned to bottom)
+        sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
+          if (structure.health.needsSanitization) {
+            footer.addClass("is-warning");
+            const warningText = footer.createSpan({ 
+                text: "⚠️ Structure issues detected.",
+                cls: "sidebar-status-text"
+            });
+            warningText.setAttr("title", structure.health.errors.join("\n"));
+            
+            footer.createEl("button", {
+                text: "Fix Now",
+                cls: "sidebar-status-button"
+            }).addEventListener("click", () => {
+                const view = this.callbacks.getView();
+                if (view) {
+                    sanitizeSnippets(view);
+                    new Notice("Document sanitized and snippets consolidated.");
+                }
+            });
+          } else {
+            footer.createSpan({ 
+                text: "Drop selection here to create a snippet",
+                cls: "sidebar-status-text"
+            });
+          }
+        });
+
+        // Add drop handling to the whole section
         sectionDiv.addEventListener("dragover", (event) => {
           event.preventDefault();
           sectionDiv.addClass("drag-over");
@@ -347,35 +402,6 @@ class SnippetsSection extends SidebarSection {
             this.callbacks.insertAfterSnippetsHeader(droppedText);
           }
         });
-
-        if (hasSnippets) {
-          const filteredSnippets = structure.snippets.filter(s => {
-            if (!this.searchQuery) return true;
-            const q = this.searchQuery.toLowerCase();
-            const content = s.content.map(el => script.sliceDocument(el.range)).join(" ").toLowerCase();
-            return (s.title?.toLowerCase().includes(q) || 
-                    s.category?.toLowerCase().includes(q) || 
-                    content.includes(q));
-          });
-
-          if (filteredSnippets.length === 0) {
-             sectionDiv.createEl("div", {
-              text: "No matches found",
-              cls: "snippets-instruction",
-            });
-            return;
-          }
-
-          // Render all snippets directly as a list (no categories)
-          for (let i = 0; i < filteredSnippets.length; i++) {
-            this.renderSnippet(sectionDiv, script, filteredSnippets[i], i);
-          }
-        } else {
-          sectionDiv.createEl("div", {
-            text: "Drop selection here to create a snippet",
-            cls: "snippets-instruction",
-          });
-        }
       },
     );
   }
@@ -436,10 +462,12 @@ class SnippetsSection extends SidebarSection {
       });
 
       snippetDiv.createDiv({ cls: "snippet-preview" }, (preview) => {
-        // Just show first line of content
         if (snippet.content.length > 0) {
           const firstLine = script.sliceDocument(snippet.content[0].range).trim().slice(0, 100);
           preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
+        } else if (snippet.text) {
+            const firstLine = snippet.text.trim().slice(0, 100);
+            preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
         }
       });
     });
@@ -642,8 +670,6 @@ class TocSection extends SidebarSection {
             }
           }
         }
-        // Use `.body` not `.content` so the qualifying synopsis (already
-        // rendered above) doesn't have its todos surface again here.
         const todos = extractNotes(el.body).filter(
           (n) => n.noteKind === "todo",
         );
@@ -717,7 +743,6 @@ class TocSection extends SidebarSection {
       if (!json) return;
       const dragData = JSON.parse(json);
 
-      // No-op if dropping on itself
       const ft = this.theFountainView();
       if (ft && ft.file && ft.file.path === dragData.path && dragData.range.start === range.start) return;
 
@@ -790,68 +815,100 @@ class CharactersSection extends SidebarSection {
   }
 }
 
-// TODO: In an ideal world, instead of registering an additional view, we
-// would take over the normal outline view (so that for markdown views the
-// regular outline view does its job but for foutainview's our view does
-// what it should...)
 export class FountainSideBarView extends ItemView {
   private updateToc: () => void;
   private sections: SidebarSection[];
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
-    this.updateToc = debounce(() => this.render(), 500, true);
-
     this.sections = [
-      new ModeSection(this.callbacks()),
-      new MetricsSection(this.callbacks()),
-      new TocSection(this.callbacks()),
-      new CharactersSection(this.callbacks()),
-      new BoneyardSection(this.callbacks()),
-      new SnippetsSection(this.callbacks()),
+      new ModeSection(this.sidebarCallbacks()),
+      new MetricsSection(this.sidebarCallbacks()),
+      new TocSection(this.sidebarCallbacks()),
+      new CharactersSection(this.sidebarCallbacks()),
+      new BoneyardSection(this.sidebarCallbacks()),
+      new SnippetsSection(this.sidebarCallbacks()),
     ];
+
+    this.updateToc = debounce(() => this.onFileChange(), 500, true);
   }
 
-  private callbacks(): SidebarCallbacks {
+  private sidebarCallbacks(): SidebarCallbacks {
     return {
-      scrollToRange: (range: Range) => this.scrollActiveScriptToHere(range),
-      getText: (range: Range) => this.getText(range),
-      getScript: () =>
-        this.theFountainView()?.getScript() ??
-        ({ error: "No script" } as any),
-      readFromFile: (path: string, range: Range) =>
-        this.readFromFile(path, range),
-      insertAfterSnippetsHeader: (text: string) =>
-        this.insertAfterSnippetsHeader(text),
-      toggleSpotlight: (character: string) => this.toggleSpotlight(character),
-      getSpotlightCharacter: () =>
-        this.theFountainView()?.spotlightCharacter() ?? null,
-      moveSceneAcross: (args) => this.moveSceneAcross(args),
-      reRender: () => this.render(),
-      requestSave: () => this.app.workspace.requestSaveLayout(),
-      replaceText: (range: Range, replacement: string) =>
-        this.theFountainView()?.replaceText(range, replacement),
-      insertTextAtCursor: (text: string) =>
-        this.theFountainView()?.insertTextAtCursor(text),
+      scrollToRange: (r) => {
+        const view = this.theFountainView();
+        if (view) view.scrollToHere(r);
+      },
+      getText: (r) => {
+        const view = this.theFountainView();
+        return view ? view.getText(r) : "";
+      },
+      readFromFile: async (path, range) => {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (file instanceof TFile) {
+          const content = await this.app.vault.read(file);
+          return content.slice(range.start, range.end);
+        }
+        return null;
+      },
+      insertAfterSnippetsHeader: (text) => {
+        const view = this.theFountainView();
+        if (view) {
+          const adapter = getActiveAdapter(view.getScript());
+          adapter.addSnippet(view, text);
+          this.onFileChange();
+        }
+      },
+      toggleSpotlight: (character) => {
+        const view = this.theFountainView();
+        if (view) {
+          if (view.spotlightCharacter() === character) {
+            view.stopSpotlightMode();
+          } else {
+            view.startSpotlightMode(character);
+          }
+        }
+      },
+      getSpotlightCharacter: () => {
+        const view = this.theFountainView();
+        return view ? view.spotlightCharacter() : null;
+      },
+      moveSceneAcross: (args) => {
+        const view = this.theFountainView();
+        if (view) view.moveSceneAcross(args);
+      },
+      reRender: () => this.onFileChange(),
+      requestSave: () => {
+        const view = this.theFountainView();
+        if (view) view.requestSave();
+      },
+      replaceText: (r, s) => {
+        const view = this.theFountainView();
+        if (view) view.replaceText(r, s);
+      },
+      insertTextAtCursor: (s) => {
+          const view = this.theFountainView();
+          if (view) view.insertTextAtCursor(s);
+      },
+      getScript: () => {
+        const view = this.theFountainView();
+        return view ? view.getScript() : (null as any);
+      },
       app: this.app,
-      focusEditor: () => this.theFountainView()?.focusEditor(),
-      getView: () => this.theFountainView() || null,
+      focusEditor: () => {
+        const view = this.theFountainView();
+        if (view) view.focusEditor();
+      },
+      getView: () => this.theFountainView(),
     };
   }
 
-  /** Read a slice of text from `path`, preferring an open FountainView's
-   *  cached script (which may carry typed-but-unsaved CM state) and
-   *  falling back to a vault read. */
-  private async readFromFile(
-    path: string,
-    range: Range,
-  ): Promise<string | null> {
-    const views = findFountainViewsForPath(this.app, path);
-    if (views.length > 0) return views[0].getText(range);
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (file instanceof TFile) {
-      const txt = await this.app.vault.read(file);
-      return txt.slice(range.start, range.end);
+  private theFountainView(): FountainView | null {
+    const leaf = this.app.workspace.getMostRecentLeaf(
+      this.app.workspace.rootSplit,
+    );
+    if (leaf && leaf.view instanceof FountainView) {
+      return leaf.view;
     }
     return null;
   }
@@ -861,122 +918,39 @@ export class FountainSideBarView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "Fountain Outline";
+    return "Fountain Sidebar";
   }
 
   getIcon(): string {
-    return "list-tree";
+    return "layout-side-right";
   }
 
-  private moveSceneAcross(args: {
-    srcPath: string;
-    srcRange: Range;
-    dstPath: string;
-    dstPos: number;
-  }) {
-    const views = findFountainViewsForPath(this.app, args.dstPath);
-    if (views.length > 0) {
-      views[0].moveSceneAcross(args);
-    }
+  async onOpen() {
+    this.registerEvent(this.app.workspace.on("layout-change", this.updateToc));
+    this.registerEvent(this.app.vault.on("modify", this.updateToc));
+    this.onFileChange();
   }
 
-  async onload(): Promise<void> {
-    this.registerEvent(
-      this.app.workspace.on(
-        "active-leaf-change",
-        (leaf: WorkspaceLeaf | null) => {
-          if (leaf?.view !== this) this.updateToc();
-        },
-      ),
-    );
-    this.registerEvent(
-      this.app.vault.on("modify", (file) => {
-        if (file.name.endsWith(".fountain")) {
-          this.updateToc();
-        }
-      }),
-    );
-  }
-
-  private scrollActiveScriptToHere(range: Range) {
-    // In the moment of clicking on a toc element, the toc is active
-    // so let's see if before that a fountainview was active.
-    this.theFountainView()?.scrollToHere(range);
-  }
-
-  private theFountainView(): FountainView | null {
-    const leaf = this.app.workspace.getMostRecentLeaf(
-      this.app.workspace.rootSplit,
-    );
-    if (leaf && leaf.view instanceof FountainView) {
-      const ft = leaf.view;
-      return ft;
-    }
-    return null;
-  }
-
-  private getText(range: Range): string {
-    const ft = this.theFountainView();
-    return ft?.getText(range) ?? "";
-  }
-
-  /**
-   * Appends text to the snippets library, respecting the current storage mode.
-   */
-  private async insertAfterSnippetsHeader(text: string) {
-    const ft = this.theFountainView();
-    if (!ft) return;
-
-    const script = ft.getScript();
-    if ("error" in script) return;
-
-    const isBeat = getActiveAdapter(script) instanceof BeatAdapter;
-    const storage = isBeat ? "beat" : "fountain";
-
-    await moveSelectionToSnippets(this.app, ft, false, storage, text);
-  }
-
-  private toggleSpotlight(character: string) {
-    const ft = this.theFountainView();
-    if (!ft) return;
-
-    if (ft.spotlightCharacter() === character) {
-      ft.stopSpotlightMode();
+  onFileChange() {
+    const view = this.theFountainView();
+    const script = view?.getScript();
+    const path = view?.file?.path || "";
+    if (script && !("error" in script)) {
+      this.render(script, view?.isEditMode() || false, path);
     } else {
-      ft.startSpotlightMode(character);
+      this.contentEl.empty();
+      this.contentEl.createDiv({
+        text: "Open a fountain file to see metrics and navigation",
+        cls: "fountain-sidebar-empty",
+      });
     }
-    this.render();
   }
 
-  private render() {
-    const ft = this.theFountainView();
-    const container = this.contentEl;
-    container.empty();
-
-    // Create the main sidebar container
-    container.createDiv({ cls: "sidebar-container" }, (sidebarDiv) => {
-      if (ft) {
-        const script = ft.getScript();
-        if (!("error" in script)) {
-          const isEditMode = ft.isEditMode();
-          const path = ft.file?.path ?? "";
-          for (const section of this.sections) {
-            try {
-              section.render(sidebarDiv, script, isEditMode, path);
-            } catch (e) {
-              Logger.error("SidebarView", "Error rendering sidebar section", e);
-            }
-          }
-        }
-      }
-    });
-  }
-
-  protected async onOpen(): Promise<void> {
-    this.updateToc();
-  }
-
-  protected async onClose(): Promise<void> {
-    // nothing to clean up
+  render(script: FountainScript, isEditMode: boolean, path: string) {
+    this.contentEl.empty();
+    const container = this.contentEl.createDiv({ cls: "sidebar-container" });
+    for (const section of this.sections) {
+      section.render(container, script, isEditMode, path);
+    }
   }
 }

@@ -5,6 +5,7 @@ import type {
   Note,
   PageBreak,
   Range,
+  ScriptHealth,
   ScriptStructure,
   Snippets,
   TextElementWithNotesAndBoneyard,
@@ -126,7 +127,7 @@ export class FountainScript {
       instead.
   */
   structure(): ScriptStructure {
-    const [mainElements, snippetElements] = this.splitOffSnippetsSection();
+    const [mainElements, snippetElements, headerRanges, isInterleaved] = this.splitOffSnippetsSection();
 
     const sections: StructureSection[] = [];
     let currentSection = new StructureSection();
@@ -247,21 +248,30 @@ export class FountainScript {
     });
 
     const boneyard = this.findBoneyardBlocks(mainElements);
-    const snippets = [
-      ...this.parseSnippets(snippetElements),
-      ...this.parseBeatSnippets(beatMetadataRanges),
-    ];
+    const [snippets, hasStrayContent] = this.parseSnippets(snippetElements);
+    const beatSnippets = this.parseBeatSnippets(beatMetadataRanges);
+
+    // Health Check
+    const errors: string[] = [];
+    if (headerRanges.length > 1) errors.push("Multiple # Snippets headers found.");
+    if (isInterleaved) errors.push("Snippet block is followed by script content.");
+    if (hasStrayContent) errors.push("Stray content found inside the snippet block.");
 
     return {
       sections,
-      snippets,
+      snippets: [...snippets, ...beatSnippets],
       boneyard,
       characters: Array.from(this.characterStats.entries())
         .map(([name, dialogueCount]) => ({ name, dialogueCount }))
         .sort((a, b) => b.dialogueCount - a.dialogueCount),
       metrics,
       beatMetadata: beatMetadataRanges.length > 0 ? computeRange(beatMetadataRanges[0], beatMetadataRanges[beatMetadataRanges.length - 1]) : null,
-      beatMetadataRanges, // All blocks
+      snippetsHeaderRange: headerRanges.length > 0 ? headerRanges[0] : null,
+      snippetsHeaderRanges: headerRanges,
+      health: {
+        needsSanitization: errors.length > 0,
+        errors,
+      },
     };
   }
 
@@ -338,50 +348,57 @@ export class FountainScript {
     return allSnippets;
   }
 
-  /** Split `script` at the first depth-≤-3 `# … Snippets …` section.
-   *  The header itself is dropped; everything before goes to `main`,
-   *  everything after to `snippet`. Returns `[script, []]` when there
-   *  is no snippets section. */
-  private splitOffSnippetsSection(): [FountainElement[], FountainElement[]] {
-    const idx = this.script.findIndex((fe) => {
-      if (fe.kind !== "section" || fe.depth > 3) return false;
-      const raw = this.sliceDocument(fe.range).toLowerCase().trim();
-      // Remove leading # if present in sliceDocument
-      return raw.replace(/^#+\s*/, "") === "snippets";
+  /** Split `script` at the FIRST depth-1 `# Snippets` section.
+   *  Returns elements before, elements between (if interleaved), and elements after.
+   */
+  private splitOffSnippetsSection(): [FountainElement[], FountainElement[], number[], boolean] {
+    const headerIndices: number[] = [];
+    for (let i = 0; i < this.script.length; i++) {
+        const fe = this.script[i];
+        if (fe.kind === "section" && fe.depth === 1) {
+            const raw = this.sliceDocument(fe.range).toLowerCase().trim();
+            if (raw.replace(/^#+\s*/, "") === "snippets") {
+                headerIndices.push(i);
+            }
+        }
+    }
+
+    if (headerIndices.length === 0) return [this.script, [], [], false];
+
+    const firstIdx = headerIndices[0];
+    const headerRanges = headerIndices.map(i => this.script[i].range);
+
+    // For the purpose of "Standard" snippets, we only care about the block starting at the FIRST header.
+    // However, if there are multiple headers, that's a health issue.
+    
+    // We treat EVERYTHING after the first header as "potential snippets" for the diagnostic,
+    // BUT we check if there are non-snippet elements after the "block".
+    // A block is defined as starting with # Snippets and ending at EOF (for this simple model).
+    const isInterleaved = firstIdx < this.script.length - 1 && this.script.slice(firstIdx + 1).some(fe => {
+        // If it's a section depth 1 but not "snippets", then we are interleaved
+        if (fe.kind === "section" && fe.depth === 1) {
+            const raw = this.sliceDocument(fe.range).toLowerCase().trim();
+            return raw.replace(/^#+\s*/, "") !== "snippets";
+        }
+        return false;
     });
-    if (idx === -1) return [this.script, []];
-    return [this.script.slice(0, idx), this.script.slice(idx + 1)];
+
+    const mainElements = this.script.slice(0, firstIdx);
+    const snippetElements = this.script.slice(firstIdx + 1);
+
+    return [mainElements, snippetElements, headerRanges, isInterleaved];
   }
 
-  private parseSnippets(elements: FountainElement[]): Snippets {
+  private parseSnippets(elements: FountainElement[]): [Snippets, boolean] {
     const snippets: Snippets = [];
     let currentContent: FountainElement[] = [];
     let currentCategory: string | undefined = undefined;
     let currentTitle: string | undefined = undefined;
+    let hasStrayContent = false;
 
-    for (const fe of elements) {
-      // Exclude Beat metadata from being treated as a snippet
-      if (fe.kind === "action" && fe.lines.some(l => l.elements.some(e => {
-        if (e.kind !== "boneyard") return false;
-        const content = this.sliceDocument(e.range);
-        return content.includes("BEAT:") && content.includes("END_BEAT");
-      }))) {
-        continue;
-      }
-
-      if (fe.kind === "section") {
-        if (fe.depth === 2) {
-          currentCategory = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
-          currentTitle = undefined;
-          continue;
-        } else if (fe.depth === 3) {
-          currentTitle = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
-          continue;
-        }
-      }
-
-      if (fe.kind === "page-break") {
-        if (currentContent.length > 0) {
+    const flush = () => {
+      if (currentContent.length > 0) {
+        if (currentTitle !== undefined) {
           snippets.push({
             title: currentTitle,
             category: currentCategory,
@@ -390,54 +407,64 @@ export class FountainScript {
               currentContent[currentContent.length - 1].range,
             ),
             content: currentContent,
-            pageBreak: fe,
           });
-          currentContent = [];
-          currentTitle = undefined;
+        } else {
+          // Content exists but no title was set yet -> Stray content!
+          // BUT: ignore if it's just blank lines (Action with no elements)
+          const realStray = currentContent.filter(fe => {
+              if (fe.kind === "action") {
+                  return fe.lines.some(l => l.elements.length > 0);
+              }
+              return true;
+          });
+          if (realStray.length > 0) {
+              hasStrayContent = true;
+          }
         }
-      } else {
-        currentContent.push(fe);
       }
-    }
+    };
 
-    if (currentContent.length > 0) {
-      snippets.push({
-        title: currentTitle,
-        category: currentCategory,
-        range: computeRange(
-          currentContent[0].range,
-          currentContent[currentContent.length - 1].range,
-        ),
-        content: currentContent,
-      });
+    for (const fe of elements) {
+      if (fe.kind === "section") {
+        if (fe.depth === 2) {
+          flush();
+          currentCategory = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
+          currentTitle = undefined;
+          currentContent = [];
+          continue;
+        } else if (fe.depth === 3) {
+          flush();
+          currentTitle = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
+          currentContent = [fe];
+          continue;
+        }
+      }
+      
+      if (fe.kind === "page-break") continue;
+      
+      currentContent.push(fe);
     }
-
-    return snippets;
+    flush();
+    return [snippets, hasStrayContent];
   }
 
   /**
    * Returns a copy of this FountainScript with hidden elements removed.
-   * Lines that become empty after removing hidden elements are also removed.
-   * Action blocks that contained only lines that are now completely removed are fully removed.
    */
   withHiddenElementsRemoved(settings: {
     hideBoneyard?: boolean;
     hideNotes?: boolean;
     hideSynopsis?: boolean;
+    hideSnippets?: boolean;
   }): FountainScript {
     const filteredScript: FountainElement[] = [];
 
     for (const element of this.script) {
-      // Check for boneyard section - if found and hideBoneyard is true, stop processing
-      if (element.kind === "section" && settings.hideBoneyard) {
-        const title = this.sliceDocument(element.range);
-        if (
-          title
-            .toLowerCase()
-            .replace(/^ *#+ */, "")
-            .trimEnd() === "boneyard"
-        ) {
-          // Stop processing here - everything after boneyard is hidden
+      // Check for sections that should stop rendering (Boneyard, Snippets)
+      if (element.kind === "section") {
+        const title = this.sliceDocument(element.range).toLowerCase().replace(/^ *#+ */, "").trim();
+        if ((settings.hideBoneyard && title === "boneyard") || (settings.hideSnippets && title === "snippets")) {
+          // For simplicity in the Reading View, we stop at the FIRST snippets header.
           break;
         }
       }
@@ -466,6 +493,7 @@ export class FountainScript {
       hideBoneyard?: boolean;
       hideNotes?: boolean;
       hideSynopsis?: boolean;
+      hideSnippets?: boolean;
     },
   ): FountainElement | null {
     switch (element.kind) {
@@ -504,20 +532,10 @@ export class FountainScript {
       this.shouldKeepElement(element, settings),
     );
 
-    // If line was originally empty, preserve it
-    if (line.elements.length === 0) {
-      return line;
-    }
+    if (line.elements.length === 0) return line;
+    if (filteredElements.length === 0) return null;
 
-    // If line became empty after filtering, remove it
-    if (filteredElements.length === 0) {
-      return null;
-    }
-
-    return {
-      ...line,
-      elements: filteredElements,
-    };
+    return { ...line, elements: filteredElements };
   }
 
   private shouldKeepElement(
@@ -529,11 +547,6 @@ export class FountainScript {
         return !settings.hideNotes;
       case "boneyard":
         return !settings.hideBoneyard;
-      case "text":
-      case "bold":
-      case "italics":
-      case "underline":
-        return true;
       default:
         return true;
     }

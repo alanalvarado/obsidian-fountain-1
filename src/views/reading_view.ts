@@ -450,6 +450,7 @@ function renderFountain(
     hideBoneyard: settings.hideBoneyard,
     hideNotes: settings.hideNotes,
     hideSynopsis: settings.hideSynopsis,
+    hideSnippets: true, // Always hide snippets in reading view
   });
 
   renderTitlePage(parent, script); // Title page uses original script

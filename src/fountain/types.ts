@@ -5,6 +5,7 @@ export type ShowHideSettings = {
   hideSynopsis?: boolean; // undefined also false
   hideNotes?: boolean; // undefined also false
   hideBoneyard?: boolean; // undefined also false
+  hideSnippets?: boolean; // undefined also false
 };
 
 // ============================================================================
@@ -35,6 +36,7 @@ export function computeRange(...optionalRanges: (Range | undefined)[]): Range {
   const ends = optionalRanges
     .map((r) => r?.end)
     .filter((e): e is number => e !== undefined);
+  if (starts.length === 0) return { start: 0, end: 0 };
   return { start: Math.min(...starts), end: Math.max(...ends) };
 }
 
@@ -281,13 +283,9 @@ export interface ScriptMetrics {
   actionPercent: number;
 }
 
-export interface ScriptStructure {
-  sections: StructureSection[];
-  snippets: Snippets;
-  boneyard: Snippets;
-  characters: CharacterStats[];
-  metrics: ScriptMetrics;
-  beatMetadata?: Range;
+export interface ScriptHealth {
+  needsSanitization: boolean;
+  errors: string[];
 }
 
 // ============================================================================
@@ -381,4 +379,16 @@ export class StructureScene {
       actionPercent: 0,
     };
   }
+}
+
+export interface ScriptStructure {
+  sections: StructureSection[];
+  snippets: Snippets;
+  boneyard: Snippets;
+  characters: CharacterStats[];
+  metrics: ScriptMetrics;
+  beatMetadata?: Range;
+  snippetsHeaderRange?: Range;
+  snippetsHeaderRanges: Range[]; // ALL headers found
+  health: ScriptHealth;
 }

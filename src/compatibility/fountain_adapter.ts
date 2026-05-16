@@ -1,4 +1,5 @@
 import { Notice } from "obsidian";
+import { FountainView } from "../views/fountain_view";
 import { FountainScript } from "../fountain/script";
 import type { Edit } from "../fountain";
 import { ICompatibilityAdapter } from "./types";
@@ -6,13 +7,11 @@ import { ICompatibilityAdapter } from "./types";
 export class FountainAdapter implements ICompatibilityAdapter {
   
   processAST(script: FountainScript): void {
-    // Pure Fountain mode does not post-process the AST to extract proprietary tags.
-    // Standard fountain tags (like regular # sections or == highlights if enabled)
-    // are natively supported by the core parser, so nothing is done here.
+    // Pure Fountain mode does not post-process the AST.
   }
 
   initializeMetadataBlock(view: FountainView, initialData?: any): void {
-    // Fountain doesn't use JSON metadata blocks
+    // Fountain doesn't use JSON metadata blocks.
   }
 
   addSnippet(view: FountainView, textToStore: string, overrideTitle?: string): void {
@@ -21,20 +20,15 @@ export class FountainAdapter implements ICompatibilityAdapter {
 
     const currentStruct = script.structure();
     const title = (overrideTitle || textToStore).split("\n")[0].slice(0, 40).trim();
-    const snippetText = `### ${title}\n${textToStore}\n\n===\n`;
+    const snippetText = `### ${title}\n${textToStore}\n\n`;
     
-    // Find snippets section
-    const snippetsSection = currentStruct.sections.find(s => 
-      s.section && script.document.slice(s.section.range.start, s.section.range.end).toLowerCase().includes("snippets")
-    );
-
-    if (snippetsSection) {
-      view.replaceText({ start: snippetsSection.range.end, end: snippetsSection.range.end }, `\n${snippetText}`);
+    if (currentStruct.snippetsHeaderRange) {
+      // Block exists: Append new snippet to the very end of the file
+      view.replaceText({ start: script.document.length, end: script.document.length }, snippetText);
     } else {
-      view.replaceText(
-        { start: script.document.length, end: script.document.length }, 
-        `\n\n# Snippets\n\n${snippetText}`
-      );
+      // Block doesn't exist: Create with ONE separator and append to EOF
+      const fullBlock = `\n\n===\n\n# Snippets\n\n${snippetText}`;
+      view.replaceText({ start: script.document.length, end: script.document.length }, fullBlock);
     }
   }
 
@@ -43,7 +37,6 @@ export class FountainAdapter implements ICompatibilityAdapter {
   }
 
   renameSnippet(view: FountainView, snippet: any, newTitle: string): void {
-    // Basic Markdown section rename (assumes the snippet starts with `### title`)
     const script = view.getScript();
     if ("error" in script) return;
 
@@ -53,7 +46,6 @@ export class FountainAdapter implements ICompatibilityAdapter {
   }
 
   scrubProprietaryTags(script: FountainScript): Edit[] {
-    // Pure fountain doesn't have proprietary tags to scrub
     return [];
   }
 }

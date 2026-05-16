@@ -134,6 +134,7 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	padding-bottom: 30px;
 }
 
 .toc-section {
@@ -146,9 +147,14 @@
 
 .snippets-section {
 	flex: 1 1 40%;
-	min-height: 200px;
+	min-height: 150px;
 	overflow-y: auto;
 	padding-top: 10px;
+}
+
+.snippets-container.is-empty {
+    flex: 0 0 auto !important;
+    min-height: auto !important;
 }
 
 .snippets-section-empty {
@@ -1739,3 +1745,65 @@
 /* Unified Section Headers */
 .section-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background-color: var(--background-secondary-alt); cursor: pointer; user-select: none; border-top: 1px solid var(--background-modifier-border); }
 .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-accent); letter-spacing: 0.05em; }
+
+/* Sidebar Flex Layout Enhancements */
+.sidebar-flex-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar-content-area {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 4px;
+}
+
+.sidebar-footer {
+    flex: 0 0 auto;
+    padding: 6px 16px;
+    background-color: var(--background-secondary);
+    border-top: 1px solid var(--background-modifier-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    z-index: 10;
+}
+
+.sidebar-status-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: var(--font-interface);
+    text-align: center;
+}
+
+.sidebar-footer.is-warning {
+    background-color: rgba(var(--color-yellow-rgb), 0.1);
+}
+
+.sidebar-footer.is-warning .sidebar-status-text {
+    color: var(--text-warning);
+    font-weight: 500;
+}
+
+.sidebar-status-button {
+    font-size: 10px;
+    padding: 2px 6px;
+    height: 20px;
+    line-height: 1;
+    background-color: var(--interactive-accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.sidebar-status-button:hover {
+    background-color: var(--interactive-accent-hover);
+}

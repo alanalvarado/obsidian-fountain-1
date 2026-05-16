@@ -36,6 +36,7 @@ import {
   FountainSideBarView,
   VIEW_TYPE_SIDEBAR,
 } from "./sidebar/sidebar_view";
+import { sanitizeSnippets } from "./fountain/sanitizer";
 
 export interface FountainSettings {
   compatibilityMode: "fountain" | "beat";
@@ -317,8 +318,23 @@ export default class FountainPlugin extends Plugin {
       checkCallback: (checking) => {
         const fv = this.app.workspace.getActiveViewOfType(FountainView);
         if (fv === null || !fv.hasSelection()) return false;
-        if (!checking) moveSelectionToSnippets(this.app, fv, true, this.settings.snippetStorage);
+        if (!checking) moveSelectionToSnippets(this.app, fv, true, this.settings.compatibilityMode);
         return true;
+      },
+    });
+
+    this.addCommand({
+      id: "fountain-sanitize-snippets",
+      name: "Sanitize Snippets Block",
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(FountainView);
+        if (view) {
+          if (!checking) {
+            sanitizeSnippets(view);
+          }
+          return true;
+        }
+        return false;
       },
     });
   }
