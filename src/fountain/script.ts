@@ -394,23 +394,26 @@ export class FountainScript {
     let currentContent: FountainElement[] = [];
     let currentCategory: string | undefined = undefined;
     let currentTitle: string | undefined = undefined;
+    let currentTitleRange: Range | undefined = undefined;
     let hasStrayContent = false;
 
     const flush = () => {
-      if (currentContent.length > 0) {
+      if (currentContent.length > 0 || currentTitle !== undefined) {
         if (currentTitle !== undefined) {
+          const bodyRange = currentContent.length > 0 
+            ? computeRange(currentContent[0].range, currentContent[currentContent.length - 1].range)
+            : (currentTitleRange ? { start: currentTitleRange.end, end: currentTitleRange.end } : { start: 0, end: 0 });
+
           snippets.push({
             title: currentTitle,
             category: currentCategory,
-            range: computeRange(
-              currentContent[0].range,
-              currentContent[currentContent.length - 1].range,
-            ),
+            range: currentTitleRange ? computeRange(currentTitleRange, bodyRange) : bodyRange,
+            titleRange: currentTitleRange,
+            bodyRange: bodyRange,
             content: currentContent,
           });
         } else {
           // Content exists but no title was set yet -> Stray content!
-          // BUT: ignore if it's just blank lines (Action with no elements)
           const realStray = currentContent.filter(fe => {
               if (fe.kind === "action") {
                   return fe.lines.some(l => l.elements.length > 0);
@@ -430,12 +433,14 @@ export class FountainScript {
           flush();
           currentCategory = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
           currentTitle = undefined;
+          currentTitleRange = undefined;
           currentContent = [];
           continue;
         } else if (fe.depth === 3) {
           flush();
           currentTitle = this.sliceDocument(fe.range).replace(/^#+\s*/, "").trim();
-          currentContent = [fe];
+          currentTitleRange = fe.range;
+          currentContent = []; // Start empty, don't include the header in the body
           continue;
         }
       }

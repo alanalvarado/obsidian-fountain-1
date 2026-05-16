@@ -86,6 +86,9 @@ export interface ViewState {
   blackoutCharacter(): string | null;
   spotlightCharacter(): string | null;
   rangeOfFirstVisibleLine(): Range | null;
+  /** Returns the range where text should be inserted (selection or cursor). 
+   * Returns null if insertion is not supported in this state. */
+  getInsertionRange(): Range | null;
 }
 
 export function getSnippetsStartPosition(

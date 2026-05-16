@@ -522,13 +522,10 @@ export class FountainView extends TextFileView {
   }
 
   insertTextAtCursor(text: string): void {
-    if (this.state instanceof EditorViewState) {
-      const selection = this.state.getSelection();
-      const pos = selection ? selection.from : this.cachedScript.document.length;
-      this.replaceText(
-        { start: pos, end: selection ? selection.to : pos },
-        text,
-      );
+    const range = this.state.getInsertionRange();
+    if (range) {
+      this.replaceText(range, text);
+      this.state.focus();
     } else {
       new Notice("Must be in Edit mode to insert text.");
     }

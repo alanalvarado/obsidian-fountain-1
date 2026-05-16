@@ -1635,13 +1635,16 @@
 	background-color: var(--background-secondary-alt);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
-	transition: transform 0.1s ease, border-color 0.2s;
+	transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .snippet-item:hover {
-	background-color: var(--background-secondary);
+	background-color: var(--background-modifier-hover);
 	border-color: var(--interactive-accent);
 	transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .snippet-header {
@@ -1649,22 +1652,31 @@
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 6px;
-	cursor: pointer;
 }
 
 .snippet-title {
 	font-weight: 600;
 	font-size: 13px;
 	color: var(--text-normal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
 }
 
 .snippet-actions {
 	display: flex;
 	gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.snippet-item:hover .snippet-actions {
+    opacity: 1;
 }
 
 .snippet-action-btn {
-	padding: 2px;
+	padding: 4px;
 	background: transparent;
 	border: none;
 	box-shadow: none !important;
@@ -1673,21 +1685,28 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+    border-radius: 4px;
 }
 
 .snippet-action-btn:hover {
-	color: var(--text-normal);
-	background-color: var(--background-modifier-hover);
+	color: var(--interactive-accent);
+	background-color: var(--background-secondary);
+}
+
+.snippet-action-btn .svg-icon {
+    width: 14px;
+    height: 14px;
 }
 
 .snippet-preview {
 	font-size: 11px;
 	color: var(--text-muted);
-	font-family: var(--screenplay-font);
+	font-family: var(--screenplay-font), var(--font-monospace);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	opacity: 0.8;
+	opacity: 0.7;
+    margin-top: 4px;
 }
 
 
@@ -1697,15 +1716,7 @@
 .fountain-sidebar .category-header:hover { background-color: var(--background-modifier-hover); color: var(--text-normal); }
 .fountain-sidebar .category-Beat-JSON .category-header { border-left: 3px solid var(--interactive-accent); }
 .fountain-sidebar .category-Boneyard .category-header { border-left: 3px solid var(--text-muted); }
-.fountain-sidebar .snippet-item { margin: 4px 0 4px 12px; padding: 8px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; }
-.fountain-sidebar .snippet-item:hover { background-color: var(--background-modifier-hover); border-color: var(--background-modifier-border); }
-.fountain-sidebar .snippet-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-.fountain-sidebar .snippet-title { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.fountain-sidebar .snippet-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
-.fountain-sidebar .snippet-item:hover .snippet-actions { opacity: 1; }
-.fountain-sidebar .snippet-action-btn { padding: 2px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
-.fountain-sidebar .snippet-action-btn:hover { color: var(--text-normal); }
-.fountain-sidebar .snippet-preview { font-family: var(--font-monospace); font-size: 0.7rem; color: var(--text-faint); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 
 /* Boneyard Section Styling */
 .boneyard-item { 

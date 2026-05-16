@@ -262,6 +262,8 @@ export interface Snippet {
   title?: string;
   category?: string;
   range: Range;
+  titleRange?: Range;
+  bodyRange?: Range;
   content: FountainElement[];
   pageBreak?: PageBreak;
   text?: string;

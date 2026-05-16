@@ -221,6 +221,10 @@ export class ReadonlyViewState implements ViewState {
     return rangeOfFirstVisibleLine(screenplay as HTMLElement);
   }
 
+  getInsertionRange(): Range | null {
+    return null;
+  }
+
   /** First index card whose top edge is at or below the content area's
    *  top, with its `data-range` parsed back to a {start, end}. Used by
    *  the ⌘⇧I toggle to anchor the editor's cursor when leaving cards. */

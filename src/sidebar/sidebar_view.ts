@@ -416,49 +416,72 @@ class SnippetsSection extends SidebarSection {
       snippetDiv.createDiv({ cls: "snippet-header" }, (header) => {
         header.createSpan({ text: snippet.title || `Snippet ${index + 1}`, cls: "snippet-title" });
         
-        header.addEventListener("click", () => {
-          if (snippet.category === "Beat JSON" && snippet.text) {
-            this.callbacks.insertTextAtCursor(snippet.text);
-          } else {
-            this.callbacks.scrollToRange(snippet.range);
-          }
+        // Actions container
+        header.createDiv({ cls: "snippet-actions" }, (actions) => {
+          actions.createEl("button", {
+            cls: "snippet-action-btn",
+            attr: { title: "Insert at cursor" }
+          }, (btn) => {
+            setIcon(btn, "plus-circle");
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.insertSnippetAtCursor(script, snippet);
+            });
+          });
+        });
+      });
+
+      snippetDiv.addEventListener("click", () => {
+        if (snippet.category === "Beat JSON" && snippet.text) {
+          this.callbacks.insertTextAtCursor(snippet.text);
+        } else {
+          this.callbacks.scrollToRange(snippet.range);
+        }
+      });
+
+      snippetDiv.addEventListener("contextmenu", (evt) => {
+        evt.preventDefault();
+        const menu = new Menu();
+
+        menu.addItem((mitem) => {
+          mitem
+            .setTitle(snippet.category === "Beat JSON" ? "Insert Snippet" : "Jump to Script")
+            .setIcon(snippet.category === "Beat JSON" ? "plus-circle" : "arrow-up-right")
+            .onClick(() => {
+              if (snippet.category === "Beat JSON" && snippet.text) {
+                this.callbacks.insertTextAtCursor(snippet.text);
+              } else {
+                this.callbacks.scrollToRange(snippet.range);
+              }
+            });
         });
 
-        snippetDiv.addEventListener("contextmenu", (evt) => {
-          evt.preventDefault();
-          const menu = new Menu();
-
+        if (snippet.category !== "Beat JSON") {
           menu.addItem((mitem) => {
             mitem
-              .setTitle(snippet.category === "Beat JSON" ? "Insert Snippet" : "Jump to Script")
-              .setIcon(snippet.category === "Beat JSON" ? "plus-circle" : "arrow-up-right")
-              .onClick(() => {
-                if (snippet.category === "Beat JSON" && snippet.text) {
-                  this.callbacks.insertTextAtCursor(snippet.text);
-                } else {
-                  this.callbacks.scrollToRange(snippet.range);
-                }
-              });
+              .setTitle("Insert at Cursor")
+              .setIcon("plus-circle")
+              .onClick(() => this.insertSnippetAtCursor(script, snippet));
           });
+        }
 
-          menu.addItem((mitem) => {
-            mitem
-              .setTitle("Rename Snippet")
-              .setIcon("pencil")
-              .onClick(() => this.renameSnippet(snippet));
-          });
-
-          menu.addSeparator();
-
-          menu.addItem((mitem) => {
-            mitem
-              .setTitle("Delete Snippet")
-              .setIcon("trash")
-              .onClick(() => this.deleteSnippet(snippet));
-          });
-
-          menu.showAtMouseEvent(evt);
+        menu.addItem((mitem) => {
+          mitem
+            .setTitle("Rename Snippet")
+            .setIcon("pencil")
+            .onClick(() => this.renameSnippet(snippet));
         });
+
+        menu.addSeparator();
+
+        menu.addItem((mitem) => {
+          mitem
+            .setTitle("Delete Snippet")
+            .setIcon("trash")
+            .onClick(() => this.deleteSnippet(snippet));
+        });
+
+        menu.showAtMouseEvent(evt);
       });
 
       snippetDiv.createDiv({ cls: "snippet-preview" }, (preview) => {
@@ -466,11 +489,32 @@ class SnippetsSection extends SidebarSection {
           const firstLine = script.sliceDocument(snippet.content[0].range).trim().slice(0, 100);
           preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
         } else if (snippet.text) {
-            const firstLine = snippet.text.trim().slice(0, 100);
-            preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
+          const firstLine = snippet.text.trim().slice(0, 100);
+          preview.setText(firstLine + (firstLine.length >= 100 ? "..." : ""));
         }
       });
     });
+  }
+
+  private insertSnippetAtCursor(script: FountainScript, snippet: Snippet) {
+    let text = "";
+    if (snippet.category === "Beat JSON" && snippet.text) {
+      text = snippet.text;
+    } else if (snippet.bodyRange) {
+      text = script.sliceDocument(snippet.bodyRange).trim();
+    } else if (snippet.range) {
+        // Fallback for older snippets or if bodyRange is missing
+        text = script.sliceDocument(snippet.range).trim();
+        // If it still starts with ###, try to strip it
+        if (text.startsWith("###")) {
+            text = text.replace(/^###.*?\n/, "").trim();
+        }
+    }
+    
+    if (text) {
+      this.callbacks.insertTextAtCursor(text);
+      new Notice(`Inserted "${snippet.title}" at cursor.`);
+    }
   }
 
   private renameSnippet(snippet: Snippet) {

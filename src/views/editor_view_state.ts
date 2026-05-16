@@ -346,6 +346,14 @@ export class EditorViewState implements ViewState {
     return this.cmEditor.state.selection.main.head;
   }
 
+  getInsertionRange(): Range | null {
+    const selection = this.cmEditor.state.selection.main;
+    return {
+      start: selection.from,
+      end: selection.to,
+    };
+  }
+
   selectCurrentScene(): void {
     const offset = this.cmEditor.state.selection.main.head;
     const script = this.cmEditor.state.field(fountainScriptField);
