@@ -120,12 +120,10 @@ class ModeSection extends SidebarSection {
     const isBeat = getActiveAdapter(script) instanceof BeatAdapter;
     const modeName = isBeat ? "BEAT APP" : "FOUNTAIN NATIVE";
 
-    container.createDiv({ cls: ["metrics-section", "mode-section"] }, (div) => {
-      div.createDiv({ cls: "metrics-header", text: "COMPATIBILITY" });
-      div.createDiv({ 
-        cls: "metric-value", 
-        text: modeName,
-        attr: { style: "font-size: 14px; text-align: center; margin-top: 4px;" } 
+    container.createDiv({ cls: ["sidebar-section", "mode-section"] }, (div) => {
+      div.createDiv({ cls: "section-title-bar", text: "COMPATIBILITY" });
+      div.createDiv({ cls: "section-content" }, (content) => {
+        content.createDiv({ cls: "mode-value", text: modeName });
       });
     });
   }
@@ -141,47 +139,48 @@ class MetricsSection extends SidebarSection {
     const structure = script.structure();
     const m = structure.metrics;
 
-    container.createDiv({ cls: "metrics-section" }, (div) => {
-      div.createDiv({ cls: "metrics-header", text: "THE PULSE" });
+    container.createDiv({ cls: "sidebar-section" }, (div) => {
+      div.createDiv({ cls: "section-title-bar", text: "THE PULSE" });
+      div.createDiv({ cls: "section-content" }, (content) => {
+        content.createDiv({ cls: "metrics-grid" }, (grid) => {
+          grid.createDiv({ cls: "metric-item" }, (item) => {
+            item.createDiv({ cls: "metric-label", text: "PAGES" });
+            item.createDiv({ cls: "metric-value", text: formatEighths(m.pageCount).replace(" pg", "") });
+          });
+          grid.createDiv({ cls: "metric-item" }, (item) => {
+            item.createDiv({ cls: "metric-label", text: "RUNTIME" });
+            item.createDiv({ cls: "metric-value", text: formatDuration(m.durationSeconds) });
+          });
+          grid.createDiv({ cls: "metric-item" }, (item) => {
+            item.createDiv({ cls: "metric-label", text: "WORDS" });
+            item.createDiv({
+              cls: "metric-value small",
+              text: m.wordCount.toLocaleString(),
+            });
+          });
+        });
 
-      div.createDiv({ cls: "metrics-grid" }, (grid) => {
-        grid.createDiv({ cls: "metric-item" }, (item) => {
-          item.createDiv({ cls: "metric-label", text: "PAGES" });
-          item.createDiv({ cls: "metric-value", text: formatEighths(m.pageCount).replace(" pg", "") });
-        });
-        grid.createDiv({ cls: "metric-item" }, (item) => {
-          item.createDiv({ cls: "metric-label", text: "RUNTIME" });
-          item.createDiv({ cls: "metric-value", text: formatDuration(m.durationSeconds) });
-        });
-        grid.createDiv({ cls: "metric-item" }, (item) => {
-          item.createDiv({ cls: "metric-label", text: "WORDS" });
-          item.createDiv({
-            cls: "metric-value small",
-            text: m.wordCount.toLocaleString(),
+        // Balance bar
+        content.createDiv({ cls: "balance-container" }, (balance) => {
+          balance.createDiv({
+            cls: "balance-bar",
+            attr: {
+              title: `Dialogue: ${m.dialoguePercent}% | Action: ${m.actionPercent}%`,
+            },
+          }, (bar) => {
+            bar.createDiv({
+              cls: "balance-fill dialogue",
+              attr: { style: `width: ${m.dialoguePercent}%` },
+            });
+            bar.createDiv({
+              cls: "balance-fill action",
+              attr: { style: `width: ${m.actionPercent}%` },
+            });
           });
-        });
-      });
-
-      // Balance bar
-      div.createDiv({ cls: "balance-container" }, (balance) => {
-        balance.createDiv({
-          cls: "balance-bar",
-          attr: {
-            title: `Dialogue: ${m.dialoguePercent}% | Action: ${m.actionPercent}%`,
-          },
-        }, (bar) => {
-          bar.createDiv({
-            cls: "balance-fill dialogue",
-            attr: { style: `width: ${m.dialoguePercent}%` },
+          balance.createDiv({ cls: "balance-labels" }, (labels) => {
+            labels.createSpan({ cls: "label-dialogue", text: "Dialogue" });
+            labels.createSpan({ cls: "label-action", text: "Action" });
           });
-          bar.createDiv({
-            cls: "balance-fill action",
-            attr: { style: `width: ${m.actionPercent}%` },
-          });
-        });
-        balance.createDiv({ cls: "balance-labels" }, (labels) => {
-          labels.createSpan({ cls: "label-dialogue", text: "Dialogue" });
-          labels.createSpan({ cls: "label-action", text: "Action" });
         });
       });
     });
@@ -244,8 +243,8 @@ class BoneyardSection extends SidebarSection {
     const structure = script.structure();
     const boneyard = structure.boneyard || [];
 
-    container.createDiv({ cls: ["metrics-section", "boneyard-container", this.collapsed ? "is-collapsed" : ""] }, (sectionDiv) => {
-      sectionDiv.createDiv({ cls: "metrics-header", text: "BONEYARD" }).addEventListener("click", () => {
+    container.createDiv({ cls: ["sidebar-section", "boneyard-container", this.collapsed ? "is-collapsed" : ""] }, (sectionDiv) => {
+      sectionDiv.createDiv({ cls: "section-title-bar", text: "BONEYARD" }).addEventListener("click", () => {
         this.collapsed = !this.collapsed;
         this.callbacks.reRender();
       });
@@ -259,10 +258,34 @@ class BoneyardSection extends SidebarSection {
       }
 
       if (!this.collapsed) {
+        const contentArea = sectionDiv.createDiv({ cls: "sidebar-content-area" });
         boneyard.forEach((block, i) => {
-          sectionDiv.createDiv({ cls: "boneyard-item" }, (item) => {
-            item.createSpan({ text: block.title || `Omission ${i + 1}`, cls: "boneyard-title" });
-            
+          contentArea.createDiv({ cls: ["boneyard-item", "sidebar-card"] }, (item) => {
+            // Header row: title + hover-revealed quick action
+            item.createDiv({ cls: "boneyard-header" }, (header) => {
+              header.createSpan({ text: block.title || `Omission ${i + 1}`, cls: "boneyard-title" });
+              header.createDiv({ cls: "boneyard-actions" }, (actions) => {
+                actions.createEl("button", {
+                  cls: "snippet-action-btn",
+                  attr: { title: "Restore to Script" }
+                }, (btn) => {
+                  setIcon(btn, "corner-up-left");
+                  btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const fullText = script.sliceDocument(block.range);
+                    let newText = fullText;
+                    if (fullText.startsWith("/*") && fullText.endsWith("*/")) {
+                      newText = fullText.slice(2, -2).trim();
+                    }
+                    this.callbacks.replaceText(block.range, newText);
+                    this.callbacks.requestSave();
+                    this.callbacks.reRender();
+                    this.callbacks.focusEditor();
+                  });
+                });
+              });
+            });
+
             item.addEventListener("click", () => {
               this.callbacks.scrollToRange(block.range);
             });
@@ -270,15 +293,6 @@ class BoneyardSection extends SidebarSection {
             item.addEventListener("contextmenu", (evt) => {
               evt.preventDefault();
               const menu = new Menu();
-              
-              menu.addItem((mitem) => {
-                mitem
-                  .setTitle("Jump to Script")
-                  .setIcon("arrow-up-right")
-                  .onClick(() => this.callbacks.scrollToRange(block.range));
-              });
-
-              menu.addSeparator();
 
               menu.addItem((mitem) => {
                 mitem
@@ -296,6 +310,8 @@ class BoneyardSection extends SidebarSection {
                     this.callbacks.focusEditor();
                   });
               });
+
+              menu.addSeparator();
 
               menu.addItem((mitem) => {
                 mitem
@@ -324,8 +340,17 @@ class BoneyardSection extends SidebarSection {
               container.setText(fullText);
             });
 
+            // Preview row
             const previewText = script.sliceDocument(block.range).replace(/\/\*|\*\//g, "").trim().slice(0, 80);
             item.createDiv({ cls: "boneyard-preview", text: previewText + (previewText.length >= 80 ? "..." : "") });
+          });
+        });
+        // Boneyard status bar
+        const omissionCount = boneyard.length;
+        sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
+          footer.createSpan({
+            cls: "sidebar-status-text",
+            text: `${omissionCount} omission${omissionCount !== 1 ? "s" : ""} in boneyard`,
           });
         });
       }
@@ -347,12 +372,12 @@ class SnippetsSection extends SidebarSection {
     const hasSnippets = structure.snippets && structure.snippets.length > 0;
     
     container.createDiv(
-      { cls: ["metrics-section", "snippets-container", !hasSnippets ? "is-empty" : ""] },
+      { cls: ["sidebar-section", "snippets-container", !hasSnippets ? "is-empty" : ""] },
       (sectionDiv) => {
         sectionDiv.addClass("screenplay-snippets");
-        sectionDiv.addClass("sidebar-flex-container");
+
         
-        sectionDiv.createDiv({ cls: "metrics-header", text: "SNIPPETS" });
+        sectionDiv.createDiv({ cls: "section-title-bar", text: "SNIPPETS" });
 
         // Search Bar (Fixed at top)
         if (hasSnippets) {
@@ -396,7 +421,7 @@ class SnippetsSection extends SidebarSection {
             });
           } else {
             footer.createSpan({ 
-                text: "Drop selection here to create a snippet",
+                text: "Drag and drop selection here to create a snippet",
                 cls: "sidebar-status-text"
             });
           }
@@ -471,7 +496,7 @@ class SnippetsSection extends SidebarSection {
     snippet: Snippet,
     index: number,
   ): void {
-    parent.createDiv({ cls: "snippet-item" }, (snippetDiv) => {
+    parent.createDiv({ cls: ["snippet-item", "sidebar-card"] }, (snippetDiv) => {
       snippetDiv.createDiv({ cls: "snippet-header" }, (header) => {
         header.createSpan({ text: snippet.title || `Snippet ${index + 1}`, cls: "snippet-title" });
         
@@ -630,57 +655,38 @@ class TocSection extends SidebarSection {
     _isEditMode: boolean,
     path: string,
   ): void {
-    container.createDiv({ cls: ["metrics-section", "toc-container"] }, (sectionDiv) => {
-      sectionDiv.createDiv({ cls: "metrics-header", text: "TABLE OF CONTENT" });
-      sectionDiv.createDiv({ cls: "screenplay-toc" }, (div) => {
+    container.createDiv({ cls: ["sidebar-section", "toc-container"] }, (sectionDiv) => {
+      sectionDiv.createDiv({ cls: "section-title-bar", text: "TABLE OF CONTENTS" });
+      const scrollArea = sectionDiv.createDiv({ cls: "sidebar-content-area" });
+      scrollArea.createDiv({ cls: "screenplay-toc" }, (div) => {
         div.createDiv({ cls: "toc-controls" }, (tocControls) => {
-          tocControls.createEl(
-            "input",
-            {
+          // Todos pill toggle
+          tocControls.createEl("label", { cls: "toc-toggle-label" }, (label) => {
+            const cbTodos = label.createEl("input", {
               type: "checkbox",
-              attr: {
-                name: "todos",
-                ...(this.showTodos ? { checked: "" } : {}),
-              },
-            },
-            (checkbox) => {
-              checkbox.addEventListener("change", (event: Event) => {
-                this.showTodos = checkbox.checked;
-                for (const el of container.querySelectorAll<HTMLElement>(
-                  ".todo",
-                )) {
-                  el.toggle(this.showTodos);
-                }
-              });
-            },
-          );
-          tocControls.createEl("label", {
-            attr: { for: "todos" },
-            text: "todos?",
+              attr: { ...(this.showTodos ? { checked: "" } : {}) },
+            });
+            label.createSpan({ text: "Todos" });
+            cbTodos.addEventListener("change", () => {
+              this.showTodos = cbTodos.checked;
+              for (const el of container.querySelectorAll<HTMLElement>(".todo")) {
+                el.toggle(this.showTodos);
+              }
+            });
           });
-          tocControls.createEl(
-            "input",
-            {
+          // Synopsis pill toggle
+          tocControls.createEl("label", { cls: "toc-toggle-label" }, (label) => {
+            const cbSynopsis = label.createEl("input", {
               type: "checkbox",
-              attr: {
-                name: "synopsis",
-                ...(this.showSynopsis ? { checked: "" } : {}),
-              },
-            },
-            (checkbox) => {
-              checkbox.addEventListener("change", (event: Event) => {
-                this.showSynopsis = checkbox.checked;
-                for (const el of container.querySelectorAll<HTMLElement>(
-                  ".synopsis, .preview",
-                )) {
-                  el.toggle(this.showSynopsis);
-                }
-              });
-            },
-          );
-          tocControls.createEl("label", {
-            attr: { for: "synopsis" },
-            text: "synopsis?",
+              attr: { ...(this.showSynopsis ? { checked: "" } : {}) },
+            });
+            label.createSpan({ text: "Synopsis" });
+            cbSynopsis.addEventListener("change", () => {
+              this.showSynopsis = cbSynopsis.checked;
+              for (const el of container.querySelectorAll<HTMLElement>(".synopsis, .preview")) {
+                el.toggle(this.showSynopsis);
+              }
+            });
           });
         });
 
@@ -695,6 +701,17 @@ class TocSection extends SidebarSection {
             el.hide();
           }
         }
+      });
+
+      // TOC status bar
+      const sections = script.structure().sections;
+      const sceneCount = sections.reduce((acc, s) => acc + s.content.filter(e => e.scene).length, 0);
+      const sectionCount = sections.filter(s => s.section).length;
+      sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
+        footer.createSpan({
+          cls: "sidebar-status-text",
+          text: `${sceneCount} scene${sceneCount !== 1 ? "s" : ""} · ${sectionCount} section${sectionCount !== 1 ? "s" : ""}`,
+        });
       });
     });
   }
@@ -906,15 +923,16 @@ class CharactersSection extends SidebarSection {
     const characters = structure.characters;
     if (characters.length === 0) return;
 
-    container.createDiv({ cls: ["metrics-section", "characters-container"] }, (sectionDiv) => {
+    container.createDiv({ cls: ["sidebar-section", "characters-container"] }, (sectionDiv) => {
       sectionDiv.addClass("screenplay-characters");
 
-      sectionDiv.createDiv({ cls: "metrics-header", text: "CHARACTERS" });
+      sectionDiv.createDiv({ cls: "section-title-bar", text: "CHARACTERS" });
 
       const activeChar = this.callbacks.getSpotlightCharacter();
+      const contentArea = sectionDiv.createDiv({ cls: "sidebar-content-area" });
 
       for (const char of characters) {
-        sectionDiv.createDiv(
+        contentArea.createDiv(
           {
             cls: ["character-stat", ...(activeChar === char.name ? ["active"] : [])],
           },
@@ -931,6 +949,14 @@ class CharactersSection extends SidebarSection {
           },
         );
       }
+
+      // Characters status bar
+      sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
+        footer.createSpan({
+          cls: "sidebar-status-text",
+          text: `${characters.length} character${characters.length !== 1 ? "s" : ""}`,
+        });
+      });
     });
   }
 }
@@ -1071,7 +1097,7 @@ export class FountainSideBarView extends ItemView {
 
   render(script: FountainScript, isEditMode: boolean, path: string) {
     this.contentEl.empty();
-    const container = this.contentEl.createDiv({ cls: "sidebar-container" });
+    const container = this.contentEl.createDiv({ cls: ["sidebar-container", "fountain-sidebar"] });
     for (const section of this.sections) {
       section.render(container, script, isEditMode, path);
     }

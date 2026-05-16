@@ -98,69 +98,10 @@
 	background-color: transparent;
 }
 
-.screenplay-snippets .snippet {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	zoom: 0.5;
-	margin-bottom: 10px;
-	max-height: 5.5em; /* Limit to roughly 5 lines (5 × 1.1em line-height) */
-	min-height: 3.3em;
-	overflow: hidden;
-	position: relative;
-	background-color: var(--background-secondary-alt);
-	transition: max-height 0.3s ease-in-out;
-}
-
-.screenplay-snippets .snippet:hover {
-	max-height: none;
-}
-
-.screenplay-snippets .snippet .screenplay {
-	margin: 0; /* Remove auto centering for snippets */
-	max-width: none; /* Allow content to fit in scaled container */
-}
-
-.screenplay-snippets .snippets-instruction {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
-	text-align: center;
-	padding: var(--size-4-2) var(--size-4-1);
-	font-style: italic;
-	margin-bottom: var(--size-4-2);
-}
-
-/* Split layout for sidebar */
-.sidebar-container {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-	padding-bottom: 30px;
-}
-
-.toc-section {
-	flex: 1 1 60%; /* Take up to 50% of space */
-	min-height: 200px; /* Minimum guaranteed space */
-	overflow-y: auto;
-	border-bottom: 1px solid var(--background-modifier-border);
-	padding-bottom: 10px;
-}
-
-.snippets-section {
-	flex: 1 1 40%;
-	min-height: 150px;
-	overflow-y: auto;
-	padding-top: 10px;
-}
-
+/* Snippets empty state collapse */
 .snippets-container.is-empty {
     flex: 0 0 auto !important;
     min-height: auto !important;
-}
-
-.snippets-section-empty {
-	flex: 0 0 auto;
-	padding-top: 10px;
-	border-top: 1px solid var(--background-modifier-border);
 }
 
 .screenplay-snippets.drag-over {
@@ -604,14 +545,7 @@
 	background-color: var(--background-modifier-hover);
 }
 
-.screenplay-toc .toc-controls {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	align-items: center;
-	padding: 4px;
-	gap: 4px;
-}
+
 
 .screenplay .note {
 	color: var(--text-muted);
@@ -1336,7 +1270,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	padding: 8px;
+	padding: 8px 8px 24px 8px; /* 24px bottom clears Obsidian's ~20px native status bar */
 }
 
 .screenplay-characters {
@@ -1408,22 +1342,36 @@
 	border-bottom: 2px solid var(--interactive-accent);
 }
 
-/* The Pulse - Metrics Dashboard */
-.metrics-section {
+/* Sidebar section card wrapper — zero-padding flex shell.
+   Each child manages its own padding. overflow:hidden + border-radius
+   clips all children (including footer) at the card edge naturally. */
+.sidebar-section {
 	background-color: var(--background-secondary);
 	border-radius: 8px;
-	padding: 12px;
+	padding: 0;
 	margin-bottom: 12px;
 	border: 1px solid var(--background-modifier-border);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
 }
 
-.metrics-header {
+/* Unified section title bar — every section uses this */
+.section-title-bar {
+	flex: 0 0 auto;
+	padding: 10px 12px 6px 12px;
 	font-size: 10px;
 	font-weight: 700;
-	color: var(--text-faint);
+	color: var(--text-muted);
 	letter-spacing: 0.15em;
-	margin-bottom: 10px;
 	text-align: center;
+}
+
+/* Fixed-height content wrapper for sections that don't scroll
+   (Mode, Metrics) — provides padding that sidebar-section no longer has */
+.section-content {
+	flex: 0 0 auto;
+	padding: 6px 12px 12px 12px;
 }
 
 .metrics-grid {
@@ -1581,20 +1529,23 @@
 }
 
 
-/* Boneyard & Snippets Improvements */
+/* Boneyard & Snippets — shared card base */
 
-.snippet-search-container {
-	margin-bottom: 12px;
+/* Shared card base for snippet and boneyard items */
+.sidebar-card {
+    margin: 8px 4px;
+    padding: 12px;
+    background-color: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
-
-.snippet-search-input {
-	width: 100%;
-	height: 30px;
-	padding: 4px 8px;
-	font-size: 13px;
-	border-radius: 4px;
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
+.sidebar-card:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .snippet-category {
@@ -1629,23 +1580,9 @@
 	display: none;
 }
 
-.snippet-item {
-	margin: 8px 4px;
-	padding: 12px;
-	background-color: var(--background-secondary-alt);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	transition: all 0.2s ease;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.snippet-item:hover {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
-	transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+/* .snippet-item and .boneyard-item extend .sidebar-card — no duplicated base props */
+.snippet-item {}
+.snippet-item:hover {}
 
 .snippet-header {
 	display: flex;
@@ -1690,7 +1627,6 @@
 
 .snippet-action-btn:hover {
 	color: var(--interactive-accent);
-	background-color: var(--background-secondary);
 }
 
 .snippet-action-btn .svg-icon {
@@ -1747,39 +1683,43 @@
 .fountain-sidebar .category-Boneyard .category-header { border-left: 3px solid var(--text-muted); }
 
 
-/* Boneyard Section Styling */
-.boneyard-item { 
-	margin: 8px 4px; 
-	padding: 10px; 
-	background-color: var(--background-secondary-alt); 
-	border: 1px solid var(--background-modifier-border); 
-	border-radius: 6px; 
-	cursor: pointer; 
-	transition: transform 0.1s ease, border-color 0.2s; 
+/* Boneyard Section Styling — extends .sidebar-card */
+.boneyard-item {}
+.boneyard-item:hover {}
+
+.boneyard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
 }
-.boneyard-item:hover { 
-	background-color: var(--background-secondary); 
-	border-color: var(--interactive-accent);
-	transform: translateY(-1px);
+.boneyard-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
-.boneyard-title { 
-	font-size: 0.85rem; 
-	font-weight: 600; 
-	color: var(--text-normal); 
-	display: block; 
-	white-space: nowrap; 
-	overflow: hidden; 
-	text-overflow: ellipsis;
-	margin-bottom: 4px;
+.sidebar-card:hover .boneyard-actions {
+    opacity: 1;
 }
-.boneyard-preview { 
-	font-family: var(--font-monospace); 
-	font-size: 0.7rem; 
-	color: var(--text-faint); 
-	font-style: normal; 
-	white-space: nowrap; 
-	overflow: hidden; 
-	text-overflow: ellipsis; 
+.boneyard-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-normal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+.boneyard-preview {
+    font-family: var(--font-monospace);
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+    margin-top: 4px;
 }
 
 /* Hover Preview (Scene Snapshots) */
@@ -1817,7 +1757,7 @@
 .section-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background-color: var(--background-secondary-alt); cursor: pointer; user-select: none; border-top: 1px solid var(--background-modifier-border); }
 .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-accent); letter-spacing: 0.05em; }
 
-/* Sidebar Flex Layout Enhancements */
+/* Sidebar Flex Layout */
 .sidebar-flex-container {
     display: flex;
     flex-direction: column;
@@ -1825,15 +1765,32 @@
     overflow: hidden;
 }
 
+/* Snippets section: zero-padding flex shell — overflow:hidden + border-radius
+   clips all children (including footer) at the card edge naturally. */
+.snippets-container {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --fountain-hint: a custom midpoint between --text-muted and --text-faint,
+   used for all sidebar hint/status/empty-state text. */
+.fountain-sidebar {
+    --fountain-hint: color-mix(in srgb, var(--text-muted) 60%, transparent 40%);
+}
+
+/* All sections share the same title bar — snippets-header is now redundant */
+
 .sidebar-content-area {
     flex: 1 1 auto;
     overflow-y: auto;
-    padding-bottom: 4px;
+    padding: 4px 8px 8px 8px;
 }
 
 .sidebar-footer {
     flex: 0 0 auto;
-    padding: 6px 16px;
+    padding: 6px 12px;
     background-color: var(--background-secondary);
     border-top: 1px solid var(--background-modifier-border);
     display: flex;
@@ -1844,8 +1801,9 @@
 }
 
 .sidebar-status-text {
-    font-size: 11px;
-    color: var(--text-muted);
+    font-size: 10px;
+    color: var(--fountain-hint, var(--text-muted));
+    font-style: italic;
     white-space: nowrap;
     overflow: hidden;
     font-family: var(--font-interface);
@@ -1878,3 +1836,58 @@
 .sidebar-status-button:hover {
     background-color: var(--interactive-accent-hover);
 }
+
+/* Empty state hint text inside sidebar sections (e.g. "No snippets found") */
+.snippets-instruction {
+    font-size: 11px;
+    color: var(--fountain-hint, var(--text-muted));
+    font-style: italic;
+    text-align: center;
+    padding: 12px 8px;
+    width: 100%;
+}
+
+/* Mode Section value display */
+.mode-value {
+    font-family: var(--font-monospace);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--interactive-accent);
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* TOC toggle pill labels */
+.toc-controls {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0 8px 0;
+}
+
+.toc-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.toc-toggle-label:has(input:checked) {
+    color: var(--interactive-accent);
+    background-color: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.toc-toggle-label input[type="checkbox"] {
+    display: none;
+}
+
