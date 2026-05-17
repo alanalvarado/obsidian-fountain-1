@@ -40,11 +40,13 @@ import { sanitizeSnippets } from "./fountain/sanitizer";
 
 export interface FountainSettings {
   compatibilityMode: "fountain" | "beat";
+  characterNotesFolder: string;
   debugMode: boolean;
 }
 
 const DEFAULT_SETTINGS: FountainSettings = {
   compatibilityMode: "fountain",
+  characterNotesFolder: "Characters/",
   debugMode: false,
 };
 
@@ -398,6 +400,29 @@ class FountainSettingTab extends PluginSettingTab {
                 // Trigger a full re-parse and re-render
                 leaf.view.state.update();
                 leaf.view.updateLines();
+              }
+            }
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Character Notes Folder")
+      .setDesc("The folder where character profile notes are stored (e.g., 'Characters/'). Leave empty for root.")
+      .addText((text) =>
+        text
+          .setPlaceholder("Characters/")
+          .setValue(this.plugin.settings.characterNotesFolder)
+          .onChange(async (value) => {
+            let folder = value.trim();
+            if (folder && !folder.endsWith("/")) folder += "/";
+            this.plugin.settings.characterNotesFolder = folder;
+            await this.plugin.saveSettings();
+
+            // Refresh character note cache in all views
+            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN);
+            for (const leaf of leaves) {
+              if (leaf.view instanceof FountainView) {
+                leaf.view.refreshCharacterNoteCache();
               }
             }
           }),

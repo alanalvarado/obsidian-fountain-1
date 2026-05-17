@@ -1308,8 +1308,47 @@
 	margin: 2px 0;
 	border-radius: 6px;
 	cursor: pointer;
+	position: relative;
 	font-size: 13px;
 	transition: background-color 0.1s ease;
+}
+
+.character-stat .open-note-icon {
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	cursor: pointer;
+	color: var(--text-muted);
+	margin-left: auto;
+	margin-right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.character-stat .open-note-icon.no-note {
+	color: var(--text-faint);
+}
+
+.character-stat:hover .open-note-icon {
+	opacity: 1;
+}
+
+.character-stat .open-note-icon:hover {
+	color: var(--text-normal);
+}
+
+.character-stat .char-count {
+	margin-left: auto;
+}
+
+/* Character Note Underline */
+.has-character-note {
+	border-bottom: 1px dotted var(--text-muted);
+	cursor: pointer;
+}
+
+.has-character-note:hover {
+	border-bottom: 1px solid var(--text-muted);
 }
 
 .character-stat:hover {

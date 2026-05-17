@@ -143,6 +143,23 @@ export class ReadonlyViewState implements ViewState {
         if (target) this.callbacks.openLink(target, me);
       });
     }
+
+    const charNames = this.contentEl.querySelectorAll(".dialogue-character");
+    for (const char of charNames) {
+      const name = (char as HTMLElement).textContent?.trim() || "";
+      if (this.callbacks.hasCharacterNote(name)) {
+        char.classList.add("has-character-note");
+      }
+      
+      char.addEventListener("click", (evt: Event) => {
+        const me = evt as MouseEvent;
+        // Mod+Click opens the note, simple click is ignored (letting it bubble if needed)
+        if (me.ctrlKey || me.metaKey) {
+          me.preventDefault();
+          this.callbacks.openCharacterNote(name, me);
+        }
+      });
+    }
   }
 
   scrollToHere(r: Range) {

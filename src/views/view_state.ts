@@ -37,6 +37,10 @@ export type ReadonlyViewCallbacks = {
   getText: (range: Range) => string;
   /** Open a `[[>target]]` link target. `event` carries Mod/Shift modifiers. */
   openLink: (target: string, event: MouseEvent) => void;
+  /** Open a character profile note. */
+  openCharacterNote: (name: string, event: MouseEvent) => void;
+  /** Check if a character has an associated profile note. */
+  hasCharacterNote: (name: string) => boolean;
 };
 
 export type Rehearsal = {

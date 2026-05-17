@@ -93,6 +93,10 @@ interface SidebarCallbacks {
   focusEditor: () => void;
   getView: () => FountainView | null;
   hoverPreview: HoverPreviewManager;
+  /** Open a character profile note. */
+  openCharacterNote: (name: string, event: MouseEvent) => void;
+  /** Check if a character has an associated profile note. */
+  hasCharacterNote: (name: string) => boolean;
 }
 
 abstract class SidebarSection {
@@ -929,34 +933,42 @@ class CharactersSection extends SidebarSection {
       sectionDiv.createDiv({ cls: "section-title-bar", text: "CHARACTERS" });
 
       const activeChar = this.callbacks.getSpotlightCharacter();
-      const contentArea = sectionDiv.createDiv({ cls: "sidebar-content-area" });
 
       for (const char of characters) {
-        contentArea.createDiv(
+        sectionDiv.createDiv(
           {
-            cls: ["character-stat", ...(activeChar === char.name ? ["active"] : [])],
+            cls: ["character-stat", ...(activeChar && activeChar === char.name ? ["active"] : [])],
           },
           (charDiv) => {
             charDiv.createSpan({ cls: "char-name", text: char.name });
+
+            charDiv.addEventListener("click", (evt) => {
+              if (evt.metaKey || evt.ctrlKey) {
+                this.callbacks.openCharacterNote(char.name, evt);
+              } else {
+                this.callbacks.toggleSpotlight(char.name);
+              }
+            });
+
+            // "Open Note" icon (visible on hover via CSS)
+            charDiv.createDiv({ cls: "open-note-icon" }, (iconDiv) => {
+              setIcon(iconDiv, "eye");
+              if (!this.callbacks.hasCharacterNote(char.name)) {
+                iconDiv.addClass("no-note");
+              }
+              iconDiv.addEventListener("click", (evt) => {
+                evt.stopPropagation();
+                this.callbacks.openCharacterNote(char.name, evt);
+              });
+            });
+
             charDiv.createSpan({
               cls: "char-count",
               text: `${char.dialogueCount}`,
             });
-
-            charDiv.addEventListener("click", () => {
-              this.callbacks.toggleSpotlight(char.name);
-            });
           },
         );
       }
-
-      // Characters status bar
-      sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
-        footer.createSpan({
-          cls: "sidebar-status-text",
-          text: `${characters.length} character${characters.length !== 1 ? "s" : ""}`,
-        });
-      });
     });
   }
 }
@@ -1015,6 +1027,7 @@ export class FountainSideBarView extends ItemView {
           } else {
             view.startSpotlightMode(character);
           }
+          this.onFileChange();
         }
       },
       getSpotlightCharacter: () => {
@@ -1049,6 +1062,14 @@ export class FountainSideBarView extends ItemView {
       },
       getView: () => this.theFountainView(),
       hoverPreview: this.hoverPreviewManager,
+      openCharacterNote: (name, event) => {
+        const view = this.theFountainView();
+        if (view) view.openCharacterNote(name, event);
+      },
+      hasCharacterNote: (name) => {
+        const view = this.theFountainView();
+        return view ? view.hasCharacterNote(name) : false;
+      },
     };
   }
 

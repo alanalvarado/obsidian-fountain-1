@@ -37,8 +37,10 @@ class FountainEditorPlugin implements PluginValue {
   private dualMarkerValid: Decoration;
   private dualMarkerInvalid: Decoration;
   private wordsLine: Decoration;
+  private hasCharacterNote?: (name: string) => boolean;
 
-  constructor(view: EditorView) {
+  constructor(view: EditorView, hasCharacterNote?: (name: string) => boolean) {
+    this.hasCharacterNote = hasCharacterNote;
     this.bold = Decoration.mark({ class: "bold" });
     this.italics = Decoration.mark({ class: "italics" });
     this.underline = Decoration.mark({ class: "underline" });
@@ -138,6 +140,9 @@ class FountainEditorPlugin implements PluginValue {
     const synopsis = Decoration.mark({ class: "synopsis" });
     const parenthetical = Decoration.mark({ class: "dialogue-parenthetical" });
     const characterName = Decoration.mark({ class: "dialogue-character-name" });
+    const characterNameWithNote = Decoration.mark({ 
+      class: "dialogue-character-name has-character-note" 
+    });
     const characterExtension = Decoration.mark({ class: "dialogue-character-extension" });
     const words = Decoration.mark({ class: "dialogue-words" });
     const action = Decoration.mark({ class: "action" });
@@ -257,11 +262,14 @@ class FountainEditorPlugin implements PluginValue {
             builder.add(el.range.start, el.range.end, pageBreak);
             break;
 
-          case "dialogue":
+          case "dialogue": {
+            const charName = view.state.doc.sliceString(el.characterRange.start, el.characterRange.end).trim();
+            const hasNote = this.hasCharacterNote?.(charName);
+            
             builder.add(
               el.characterRange.start,
               el.characterRange.end,
-              characterName,
+              hasNote ? characterNameWithNote : characterName,
             );
             if (el.characterExtensionsRange.start !== el.characterExtensionsRange.end) {
               builder.add(
@@ -301,6 +309,7 @@ class FountainEditorPlugin implements PluginValue {
               }
             }
             break;
+          }
 
           case "action":
             builder.add(el.range.start, el.range.end, action);
@@ -331,8 +340,10 @@ const pluginSpec: PluginSpec<FountainEditorPlugin> = {
   decorations: (value: FountainEditorPlugin) => value.decorations,
 };
 
-function createFountainEditorPlugin(): ViewPlugin<FountainEditorPlugin> {
+function createFountainEditorPlugin(
+  hasCharacterNote?: (name: string) => boolean,
+): ViewPlugin<FountainEditorPlugin> {
   return ViewPlugin.define((view) => {
-    return new FountainEditorPlugin(view);
+    return new FountainEditorPlugin(view, hasCharacterNote);
   }, pluginSpec);
 }

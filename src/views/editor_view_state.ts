@@ -30,6 +30,10 @@ export type EditorCallbacks = {
   getLinkCandidates?: () => LinkCompletionCandidate[];
   /** Navigate to a link target. `event` carries Mod/Shift modifiers. */
   openLink?: (target: string, event: MouseEvent) => void;
+  /** Open a character profile note. */
+  openCharacterNote?: (name: string, event: MouseEvent) => void;
+  /** Check if a character has an associated profile note. */
+  hasCharacterNote?: (name: string) => boolean;
 };
 
 /// Returns the first scrollable element starting at the current element up to the DOM tree.
@@ -101,7 +105,7 @@ export class EditorViewState implements ViewState {
         EditorView.lineWrapping,
         foldGutter(),
         createFountainFoldService(),
-        createFountainEditorPlugin(),
+        createFountainEditorPlugin(callbacks.hasCharacterNote),
         createCharacterCompletion(
           () => this.cmEditor.state.field(fountainScriptField),
           callbacks.getLinkCandidates,
@@ -123,6 +127,8 @@ export class EditorViewState implements ViewState {
               });
               if (pos !== null) {
                 const script = view.state.field(fountainScriptField);
+                
+                // 1. Check for explicit links [[>target]]
                 const link = findLinkAtOffset(script, pos);
                 if (link) {
                   const text = script.document.slice(
@@ -131,6 +137,14 @@ export class EditorViewState implements ViewState {
                   );
                   const { target } = parseLinkContent(text);
                   callbacks.openLink?.(target, event);
+                  return true;
+                }
+
+                // 2. Check for character names
+                const targetEl = event.target as HTMLElement;
+                if (targetEl.classList.contains("dialogue-character-name")) {
+                  const name = targetEl.textContent?.trim() || "";
+                  callbacks.openCharacterNote?.(name, event);
                   return true;
                 }
               }

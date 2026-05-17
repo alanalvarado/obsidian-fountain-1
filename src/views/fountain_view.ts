@@ -40,6 +40,7 @@ import {
   type ViewState,
   getSnippetsStartPosition,
 } from "./view_state";
+import { getCharacterNotePath, getOrCreateCharacterNote } from "../utils/file";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain";
 
@@ -69,6 +70,7 @@ export class FountainView extends TextFileView {
   private stopRehearsalModeAction: HTMLElement;
   private cachedScript: FountainScript;
   private spellCheckEnabled = false;
+  private characterNoteCache: Set<string> = new Set();
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -152,6 +154,8 @@ export class FountainView extends TextFileView {
       moveSceneAcross: (args) => this.moveSceneAcross(args),
       getText: (r) => this.getText(r),
       openLink: (target, event) => this.openLink(target, event),
+      openCharacterNote: (name, event) => this.openCharacterNote(name, event),
+      hasCharacterNote: (name) => this.characterNoteCache.has(name),
     };
   }
 
@@ -297,6 +301,8 @@ export class FountainView extends TextFileView {
       requestSave: () => this.requestSave(),
       getLinkCandidates: () => this.getLinkCandidates(),
       openLink: (target, event) => this.openLink(target, event),
+      openCharacterNote: (name, event) => this.openCharacterNote(name, event),
+      hasCharacterNote: (name) => this.characterNoteCache.has(name),
     };
   }
 
@@ -497,6 +503,7 @@ export class FountainView extends TextFileView {
       view.cachedScript = newScript;
       view.state.receiveScript(newScript);
     }
+    this.refreshCharacterNoteCache();
   }
 
   /** Called by the path-keyed pipeline to apply a programmatic edit to
@@ -743,6 +750,7 @@ export class FountainView extends TextFileView {
         view.cachedScript = newScript;
         view.state.setPath(path);
         view.state.receiveScript(newScript);
+        view.refreshCharacterNoteCache();
       }
     } catch (e) {
       Logger.error("FountainView", "CRASH during setViewData parse/update", e);
@@ -920,5 +928,39 @@ export class FountainView extends TextFileView {
         insert: snippetsSection,
       });
     }
+  }
+
+  public refreshCharacterNoteCache(): void {
+    const characters = Array.from(this.cachedScript.allCharacters.keys());
+
+    this.characterNoteCache.clear();
+    for (const char of characters) {
+      const trimmedChar = char.trim();
+      const exactPath = getCharacterNotePath(this.app, this.file?.path ?? "", trimmedChar);
+      const file = this.app.vault.getAbstractFileByPath(exactPath);
+      if (file && !("children" in file)) {
+        this.characterNoteCache.add(trimmedChar);
+      }
+    }
+    // Trigger re-render to show/hide underlines
+    this.state.render();
+    if (this.state.isEditMode) {
+        // For editor, we need to force a re-decoration
+        (this.state as any).cmEditor?.dispatch({});
+    }
+  }
+
+  public async openCharacterNote(characterName: string, event: MouseEvent): Promise<void> {
+    const file = await getOrCreateCharacterNote(this.app, this.file?.path ?? "", characterName);
+    
+    if (file) {
+        const inNewLeaf = event.metaKey || event.ctrlKey;
+        const leaf = inNewLeaf ? this.app.workspace.getLeaf("tab") : this.leaf;
+        await leaf.openFile(file);
+    }
+  }
+
+  public hasCharacterNote(characterName: string): boolean {
+    return this.characterNoteCache.has(characterName.trim());
   }
 }
