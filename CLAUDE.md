@@ -4,11 +4,11 @@
 
 - **Views**: Readonly/edit modes with seamless toggling, PDF export, rehearsal mode with blackout
 - **Sidebar**: TOC with navigation, synopsis/notes toggles, snippets with drag-and-drop
-- **Index Cards**: Click card → jump to editor at start-of-scene-content; pencil renames scene/section headings inline (section rename also handles depth via leading `#`s and deletion via empty input); hover gutter on each card has stacked `+` (scene) / `#` (section) buttons, with a right-edge variant on the last scene of a section; horizontal `+ section` bars at top-of-doc and tail-of-doc; empty section / empty doc show a dashed `+` card; drag-drop reordering across files; ⌘⇧I toggles cards ↔ editor preserving position. **Section depth in the cards view is 1–3 only**; `script.structure()` treats `####+` headings as scene-internal subsections (`scene.content`), and the section rename refuses depths past 3. See `design/improved_index_card_view.md` and `design/section_editing_in_index_cards.md`.
+- **Index Cards**: Click card → jump to editor at start-of-scene-content; pencil renames scene/section headings inline (section rename also handles depth via leading `#`s and deletion via empty input); hover gutter on each card has stacked `+` (scene) / `#` (section) buttons, with a right-edge variant on the last scene of a section; horizontal `+ section` bars at top-of-doc and tail-of-doc; empty section / empty doc show a dashed `+` card; drag-drop reordering across files; ⌘⇧I toggles cards ↔ editor preserving position. **Section depth in the cards view is 1–3 only**; `script.structure()` treats `####+` headings as scene-internal subsections (`scene.content`), and the section rename refuses depths past 3. See `docs/design/improved_index_card_view.md` and `docs/design/section_editing_in_index_cards.md`.
 - **Snippets**: Store in `# Snippets` section, Mod+Shift+X/C to move/copy selection, drag into script/sidebar
 - **Editor**: Scene folding (Ctrl+Shift+[ ]), character name completion, ⌘⇧L selects the current scene as text (compose with ⌘X / ⌘C for delete / duplicate)
 - **Margin Marks**: `[[@marker]]` syntax renders in margin
-- **Links**: `[[>target]]` / `[[>target|display]]` link to other vault files; auto-rewritten on rename. See `design/links.md` for rationale and deferred features.
+- **Links**: `[[>target]]` / `[[>target|display]]` link to other vault files; auto-rewritten on rename. See `docs/design/links.md` for rationale and deferred features.
 - **Boneyard**: Content after `# boneyard` hidden when enabled
 - **Removal Commands**: Filter by character, scenes, or element types (creates copy by default)
 
@@ -106,8 +106,8 @@ Left margin fixed at 1.5" for binding; other margins computed to maintain consis
 
 ## Source Layout
 
-Note: the `fountain/` directory at repo root is the Claude Code skill
-(`fountain/SKILL.md`), not source. The Fountain parser/core lives in
+Note: the `skills/fountain/` directory at repo root is the modular skill
+(`skills/fountain/SKILL.md`), not source. The Fountain parser/core lives in
 `src/fountain/`.
 
 In `src/`:

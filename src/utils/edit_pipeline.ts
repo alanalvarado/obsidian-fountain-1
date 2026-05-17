@@ -1,7 +1,7 @@
 import { type App, TFile } from "obsidian";
-import { type Edit, applyEdits } from "./fountain";
-import { parse } from "./fountain/parser";
-import { FountainView } from "./views/fountain_view";
+import { type Edit, applyEdits } from "../fountain";
+import { parse } from "../fountain/parser";
+import { FountainView } from "../views/fountain_view";
 import { Logger } from "./logger";
 
 /**

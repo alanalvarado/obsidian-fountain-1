@@ -4,7 +4,7 @@ import type {
   FountainScript,
   StructureScene,
   StructureSection,
-} from "./fountain";
+} from "../fountain";
 
 // Base class for all removal modals
 export abstract class RemovalModal extends Modal {

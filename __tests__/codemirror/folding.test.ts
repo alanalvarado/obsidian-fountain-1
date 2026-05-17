@@ -1,5 +1,5 @@
-import { buildFoldRanges, findFoldAtPosition, findFoldableSceneAt } from "./folding";
-import { parse } from "../fountain/parser";
+import { buildFoldRanges, findFoldAtPosition, findFoldableSceneAt } from "../../src/codemirror/folding";
+import { parse } from "../../src/fountain/parser";
 
 describe("Fountain Folding", () => {
   describe("buildFoldRanges", () => {

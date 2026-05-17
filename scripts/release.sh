@@ -65,7 +65,7 @@ gh release create "$version" \
   --title "$version - $title" \
   --notes "$body" \
   --latest \
-  main.js styles.css manifest.json
+  dist/main.js dist/styles.css dist/manifest.json
 
 echo ""
 echo "Release $version created successfully!"

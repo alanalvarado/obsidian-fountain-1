@@ -4,7 +4,7 @@ import { EditorViewState } from "../views/editor_view_state";
 import { BeatAdapter } from "../compatibility/beat_adapter";
 import { FountainAdapter } from "../compatibility/fountain_adapter";
 import { ICompatibilityAdapter } from "../compatibility/types";
-import { Logger } from "../logger";
+import { Logger } from "../utils/logger";
 
 export function getCompatibilityAdapter(app: App, forceType?: "fountain" | "beat"): ICompatibilityAdapter {
   const plugin = (app as any).plugins.getPlugin("fountain");

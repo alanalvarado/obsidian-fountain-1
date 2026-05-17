@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { Logger } from "../logger";
+import { Logger } from "./logger";
 
 export function getCharacterNotePath(app: App, sourcePath: string, characterName: string): string {
     const plugin = (app as any).plugins.getPlugin("fountain") || (app as any).plugins.plugins["fountain"];

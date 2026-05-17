@@ -74,10 +74,10 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
         --title "$version - $title" `
         --notes $body `
         --latest `
-        main.js styles.css manifest.json
+        dist/main.js dist/styles.css dist/manifest.json
     Write-Host "`nRelease $version created successfully!" -ForegroundColor Green
 } else {
     Write-Host "`n[!] GitHub CLI (gh) not found in PATH." -ForegroundColor Yellow
     Write-Host "Please create the release manually at: https://github.com/alanalvarado/obsidian-fountain-1/releases/new"
-    Write-Host "Upload these files: main.js, styles.css, manifest.json"
+    Write-Host "Upload these files: dist/main.js, dist/styles.css, dist/manifest.json"
 }

@@ -1,15 +1,15 @@
 import { type App, Notice, type TFile } from "obsidian";
-import { type FountainElement, removeElementsFromText } from "./fountain";
-import { parse } from "./fountain/parser";
-import { UnsupportedCharacterError, generatePDF } from "./pdf/generator";
-import { type PDFOptions, PDFOptionsDialog } from "./pdf/options_dialog";
+import { type FountainElement, removeElementsFromText } from "../fountain";
+import { parse } from "../fountain/parser";
+import { UnsupportedCharacterError, generatePDF } from "../pdf/generator";
+import { type PDFOptions, PDFOptionsDialog } from "../pdf/options_dialog";
 import {
   RemoveDialogueModal,
   RemoveElementTypesModal,
   RemoveStructureModal,
-} from "./removal_commands";
-import { FountainView } from "./views/fountain_view";
-import { VIEW_TYPE_SIDEBAR } from "./sidebar/sidebar_view";
+} from "../modals/removal_modals";
+import { FountainView } from "../views/fountain_view";
+import { VIEW_TYPE_SIDEBAR } from "../sidebar/sidebar_view";
 
 export function hasActiveFountainFile(app: App): boolean {
   const f = app.workspace.getActiveFile();

@@ -5,14 +5,14 @@ import {
   TFile,
   debounce,
 } from "obsidian";
-import { applyEditsToFountainFile } from "./edit_pipeline";
+import { applyEditsToFountainFile } from "../utils/edit_pipeline";
 import {
   type Edit,
   extractLinks,
   parseLinkContent,
   targetRefersTo,
-} from "./fountain";
-import { parse } from "./fountain/parser";
+} from "../fountain";
+import { parse } from "../fountain/parser";
 
 const FOUNTAIN_EXT = "fountain";
 

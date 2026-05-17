@@ -15,21 +15,22 @@ import {
   newDocumentCommand,
   openSidebar,
   openSidebarCommand,
+  toggleBoneyardComment,
+  moveSelectionToSnippets,
+  convertDocumentFormat,
 } from "./commands";
-import { toggleBoneyardComment } from "./commands/boneyard_commands";
-import { moveSelectionToSnippets, convertDocumentFormat } from "./commands/format_commands";
 import { BeatAdapter } from "./compatibility/beat_adapter";
 import { FountainAdapter } from "./compatibility/fountain_adapter";
 import { setActiveAdapter } from "./compatibility/registry";
-import { applyEditsToFountainFile } from "./edit_pipeline";
+import { applyEditsToFountainFile } from "./utils/edit_pipeline";
 import type { Edit } from "./fountain";
 import { parse } from "./fountain/parser";
-import { LinkIndex } from "./links_index";
+import { LinkIndex } from "./services/links_index";
 import { FountainConfirmModal } from "./modals/confirm_modal";
 import { EditorViewState } from "./views/editor_view_state";
 import { FountainView, VIEW_TYPE_FOUNTAIN } from "./views/fountain_view";
 import { renderContent } from "./views/reading_view";
-import { Logger } from "./logger";
+import { Logger } from "./utils/logger";
 import {
   FountainSideBarView,
   VIEW_TYPE_SIDEBAR,

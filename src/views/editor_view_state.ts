@@ -20,7 +20,7 @@ import type { LinkCompletionCandidate } from "../codemirror/link_completion";
 import { fountainScriptField } from "../codemirror/state";
 import type { Edit, FountainScript, Range } from "../fountain";
 import { findLinkAtOffset, findSceneAtOffset, parseLinkContent } from "../fountain";
-import { Logger } from "../logger";
+import { Logger } from "../utils/logger";
 import type { ViewState } from "./view_state";
 
 export type EditorCallbacks = {

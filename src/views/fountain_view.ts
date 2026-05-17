@@ -11,8 +11,8 @@ import {
 import {
   applyEditsToFountainFile,
   findFountainViewsForPath,
-} from "../edit_pipeline";
-import { Logger } from "../logger";
+} from "../utils/edit_pipeline";
+import { Logger } from "../utils/logger";
 import {
   type Edit,
   type FountainScript,
@@ -27,7 +27,7 @@ import {
   startOfSceneContent,
 } from "../fountain";
 import { parse } from "../fountain/parser";
-import { FuzzySelectString } from "../fuzzy_select_string";
+import { FuzzySelectString } from "../modals/fuzzy_select_modal";
 import {
   type EditorCallbacks,
   EditorViewState,
@@ -626,7 +626,7 @@ export class FountainView extends TextFileView {
 
   /** ⌘⇧I — toggle the active fountain view between IndexCards and the
    *  prior non-cards mode (edit or readonly Script). Position is preserved
-   *  across the trip per design/improved_index_card_view.md §1. */
+   *  across the trip per docs/design/improved_index_card_view.md §1. */
   toggleIndexCardsView(): void {
     if (
       this.state instanceof ReadonlyViewState &&

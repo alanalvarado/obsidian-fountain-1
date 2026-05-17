@@ -3,7 +3,8 @@ import { FountainScript } from "../fountain/script";
 import type { Edit } from "../fountain";
 import { ICompatibilityAdapter } from "./types";
 import { SceneHeading, Section } from "../fountain/types";
-import { Logger } from "../logger";
+import { Logger } from "../utils/logger";
+import { FountainView } from "../views/fountain_view";
 
 export const BEAT_BOILERPLATE_START = "If you're seeing this, you can remove the following stuff - BEAT: ";
 export const BEAT_BOILERPLATE_END = " END_BEAT";

@@ -3,7 +3,7 @@
 This is the why-doc for the section affordances in the index card view
 (insertion gutters, `+ section` bars, depth-via-rename). Implementation
 lives in `src/views/index_cards_view.ts` and the user-facing reference
-in `README.md`. Companion: `design/improved_index_card_view.md`.
+in `README.md`. Companion: `improved_index_card_view.md`.
 
 ## Section depth: 1–3 only
 

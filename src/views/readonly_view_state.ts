@@ -4,7 +4,7 @@ import type {
   Range,
   ShowHideSettings,
 } from "../fountain";
-import { Logger } from "../logger";
+import { Logger } from "../utils/logger";
 import { renderIndexCards } from "./index_cards_view";
 import { rangeOfFirstVisibleLine, renderFountain } from "./reading_view";
 import {
