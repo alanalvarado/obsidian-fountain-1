@@ -1,8 +1,11 @@
-import { App, Menu } from "obsidian";
+import { App, Menu, Notice } from "obsidian";
 import { FountainView } from "./fountain_view";
 import { EditorViewState } from "./editor_view_state";
 import { toggleBoneyardComment } from "../commands/boneyard_commands";
 import { moveSelectionToSnippets } from "../commands/format_commands";
+import { findSceneAtOffset } from "../fountain";
+import { SUPPORTED_COLORS, updateLineColor } from "../utils/colors";
+import { formatMarkerTag } from "../utils/markers";
 
 export function addFountainMenuItems(
   app: App,
@@ -238,6 +241,54 @@ export function addFountainMenuItems(
       .setIcon("link")
       .onClick(() => wrapSelection(view, "[[>", "]]", 3));
   });
+
+  menu.addSeparator();
+
+  // 8. Color Scene
+  menu.addItem((item: any) => {
+    item.setTitle("Color Scene..")
+      .setIcon("palette");
+      
+    const subMenu = item.setSubmenu();
+    
+    // None option
+    subMenu.addItem((subItem: any) => {
+      subItem.setTitle(createColorMenuItemTitle(null, "None"))
+        .onClick(() => applySceneColor(view, null));
+    });
+    
+    // Supported colors with circle previews
+    for (const color of SUPPORTED_COLORS) {
+      const capitalColor = color.charAt(0).toUpperCase() + color.slice(1);
+      subMenu.addItem((subItem: any) => {
+        subItem.setTitle(createColorMenuItemTitle(color, capitalColor))
+          .onClick(() => applySceneColor(view, color));
+      });
+    }
+  });
+
+  // 9. Markers
+  menu.addItem((item: any) => {
+    item.setTitle("Markers..")
+      .setIcon("flag");
+      
+    const subMenu = item.setSubmenu();
+    
+    // Add Marker option
+    subMenu.addItem((subItem: any) => {
+      subItem.setTitle(createColorMenuItemTitle(null, "Add Marker"))
+        .onClick(() => insertMarker(view));
+    });
+    
+    // Supported colors directly listed under the flat menu with circle previews
+    for (const color of SUPPORTED_COLORS) {
+      const capitalColor = color.charAt(0).toUpperCase() + color.slice(1);
+      subMenu.addItem((subItem: any) => {
+        subItem.setTitle(createColorMenuItemTitle(color, capitalColor))
+          .onClick(() => insertMarker(view, color));
+      });
+    }
+  });
 }
 
 // ============================================================================
@@ -429,4 +480,89 @@ function insertPageBreak(view: FountainView) {
   
   const prefix = pos > 0 && docText[pos - 1] !== "\n" ? "\n===\n" : "===\n";
   view.replaceText(range, prefix);
+}
+
+function applySceneColor(view: FountainView, color: string | null) {
+  if (!(view.state instanceof EditorViewState)) return;
+  const offset = view.state.cursorOffset();
+  const script = view.getScript();
+  if ("error" in script) return;
+
+  const scene = findSceneAtOffset(script, offset);
+  if (!scene || !scene.scene) {
+    new Notice("No scene heading found to color.");
+    return;
+  }
+
+  const docText = view.getViewData();
+  const sceneStart = scene.scene.range.start;
+  let lineEnd = docText.indexOf("\n", sceneStart);
+  if (lineEnd === -1) {
+    lineEnd = docText.length;
+  }
+  
+  const originalLine = docText.slice(sceneStart, lineEnd);
+  const updatedLine = updateLineColor(originalLine, color);
+  
+  if (originalLine !== updatedLine) {
+    view.replaceText({ start: sceneStart, end: lineEnd }, updatedLine);
+    view.focusEditor();
+  }
+}
+
+function insertMarker(view: FountainView, color?: string) {
+  if (!(view.state instanceof EditorViewState)) return;
+  const selection = view.state.getSelection();
+  
+  if (selection) {
+    const text = selection.text;
+    const markerText = formatMarkerTag(color, text);
+    view.replaceText({ start: selection.from, end: selection.to }, markerText);
+  } else {
+    const range = view.state.getInsertionRange();
+    if (range) {
+      if (color) {
+        const markerText = formatMarkerTag(color);
+        view.replaceText(range, markerText);
+        view.state.setCursor(range.start + markerText.length);
+      } else {
+        // Non-colored marker without selection: insert [[marker ]] and place cursor inside
+        const markerText = "[[marker ]]";
+        view.replaceText(range, markerText);
+        view.state.setCursor(range.start + 9);
+      }
+    }
+  }
+  view.focusEditor();
+}
+
+function createColorMenuItemTitle(colorName: string | null, label: string): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  
+  const circle = document.createElement("span");
+  circle.style.display = "inline-block";
+  circle.style.width = "10px";
+  circle.style.height = "10px";
+  circle.style.borderRadius = "50%";
+  circle.style.marginRight = "8px";
+  circle.style.verticalAlign = "middle";
+  circle.style.boxSizing = "border-box";
+  
+  if (colorName) {
+    const cssColor = colorName.toLowerCase();
+    circle.style.backgroundColor = cssColor;
+    circle.style.border = `1px solid ${cssColor}`;
+  } else {
+    circle.style.border = "1px solid var(--text-muted)";
+    circle.style.backgroundColor = "transparent";
+  }
+  
+  const text = document.createElement("span");
+  text.textContent = label;
+  text.style.verticalAlign = "middle";
+  
+  fragment.appendChild(circle);
+  fragment.appendChild(text);
+  
+  return fragment;
 }
