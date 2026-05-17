@@ -394,6 +394,18 @@ export class EditorViewState implements ViewState {
     };
   }
 
+  setCursor(pos: number): void {
+    this.cmEditor.dispatch({
+      selection: { anchor: pos, head: pos },
+    });
+  }
+
+  setSelection(anchor: number, head: number): void {
+    this.cmEditor.dispatch({
+      selection: { anchor, head },
+    });
+  }
+
   selectCurrentScene(): void {
     const offset = this.cmEditor.state.selection.main.head;
     const script = this.cmEditor.state.field(fountainScriptField);
