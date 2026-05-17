@@ -22,14 +22,15 @@ Mark tasks directly within your script.
 *   **Syntax**: `[[todo: Your task description]]`
 *   **Behavior**: These notes are indexed and displayed in the **Table of Contents** sidebar under their respective scenes. Clicking a todo in the sidebar jumps directly to its location.
 
-### Margin Marks (`[[@marker]]`)
+### Margin Marks (`[[marker]]`)
 
 Create visual labels that appear in the right margin of the script.
 
-*   **Syntax**: `[[@marker_word]]` (where `marker_word` is alphanumeric with underscores).
+*   **Syntax**: `[[marker text]]` or simply `[[marker]]`
 *   **Behavior**:
     *   **Reading View**: Appears as a small, distinct label in the right margin.
-    *   **Common Uses**: Performance cues (`[[@lights]]`, `[[@sound]]`), comedy beats (`[[@laugh]]`), or emotional beats (`[[@tension]]`).
+    *   **Common Uses**: Performance cues (`[[marker lights]]`, `[[marker sound]]`), comedy beats (`[[marker laugh]]`), or emotional beats (`[[marker tension]]`).
+    *   *Note: Legacy `[[@marker]]` syntax is automatically migrated to the standard `[[marker]]` syntax upon file load.*
 
 ### Note Kinds (`[[kind: text]]`)
 
@@ -49,13 +50,14 @@ Create a library of reusable content blocks at the end of your document.
 
 ## 2. BEAT Compatibility Syntax
 
-The plugin includes a **BeatAdapter** to support files and features from the [BEAT](https://www.beat-app.fi/) screenwriting app.
+The plugin natively adopts select [BEAT](https://www.beat-app.fi/) syntax as core features to allow seamless cross-platform workflow.
 
 ### Color Coding (`[[COLOR]]`)
 
 Apply colors to scene and section headings.
 
-*   **Syntax**: `[[COLOR <color>]]` or `[[<color>]]` (e.g., `[[red]]`, `[[#f0b]]`, `[[COLOR cyan]]`).
+*   **Syntax**: `[[COLOR <color>]]` or `[[<color>]]` (e.g., `[[RED]]`, `[[COLOR cyan]]`).
+*   **Supported Colors**: Must be standard CSS color words (cyan, magenta, yellow, red, green, blue, brown, gray, orange, purple, pink). Custom hex codes (e.g., `[[#FF0000]]`) are unsupported.
 *   **Behavior**:
     *   Applies a background or text color to the heading in the Editor, Table of Contents, and Index Card views.
     *   The tag itself is hidden or dimmed to keep the script readable.
@@ -64,22 +66,15 @@ Apply colors to scene and section headings.
 
 Internal markers for specific beats or points in a scene heading.
 
-*   **Syntax**: `[[marker <text>]]`
-*   **Behavior**: Extracted by the Beat adapter and used for structural organization.
-
-### Sinopsis (`[[sinopsis]]`)
-
-BEAT-style scene summaries.
-
-*   **Syntax**: `[[sinopsis]]` or any generic `[[text]]` placed directly on a scene or section heading line.
-*   **Behavior**: Treated as the scene's synopsis for outline views.
+*   **Syntax**: `[[marker]]`, `[[marker <text>]]`, `[[marker <color>]]`, or `[[marker <color> <text>]]`
+*   **Behavior**: Extracted and used for structural organization.
 
 ### BEAT Metadata Block
 
 BEAT stores proprietary metadata in a specific JSON block at the end of the file.
 
 *   **Syntax**: `/* If you're seeing this, you can remove the following stuff - BEAT: { ...JSON... } END_BEAT */`
-*   **Behavior**: The plugin uses this to store and read character genders, window states, and "Beat JSON" snippets.
+*   **Behavior**: The plugin passively preserves this block to maintain compatibility with Beat's window states and character genders. Snippets are strictly managed using the Fountain Native `# Snippets` block.
 
 ---
 
