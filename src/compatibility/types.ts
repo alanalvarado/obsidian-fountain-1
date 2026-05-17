@@ -1,7 +1,7 @@
 import { App } from "obsidian";
 import { FountainView } from "../views/fountain_view";
 import { FountainScript } from "../fountain/script";
-import type { Edit } from "../fountain";
+import type { Edit, Range, Snippet } from "../fountain";
 
 export interface ICompatibilityAdapter {
   /**
@@ -35,4 +35,19 @@ export interface ICompatibilityAdapter {
    * Returns an array of Edits to be applied.
    */
   scrubProprietaryTags(script: FountainScript): Edit[];
+
+  /**
+   * Identifies whether a given block content should be excluded from the general boneyard list.
+   */
+  shouldExcludeFromBoneyard(content: string): boolean;
+
+  /**
+   * Scans the script for compatibility metadata comments to separate them.
+   */
+  getCompatibilityMetadataRanges(script: FountainScript): Range[];
+
+  /**
+   * Parses snippets defined inside custom compatibility formats (like Beat's JSON block).
+   */
+  parseCompatibilitySnippets(script: FountainScript, metadataRanges: Range[]): Snippet[];
 }

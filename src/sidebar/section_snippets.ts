@@ -1,9 +1,7 @@
 import { App, Menu, Modal, Notice, Setting, setIcon } from "obsidian";
 import { FountainConfirmModal } from "../modals/confirm_modal";
 import type { FountainScript, Range, Snippet } from "../fountain";
-import { BeatAdapter } from "../compatibility/beat_adapter";
-import { FountainAdapter } from "../compatibility/fountain_adapter";
-import { getActiveAdapter } from "../compatibility/registry";
+import { FountainAdapter } from "../compatibility/fountain/fountain_adapter";
 import { sanitizeSnippets } from "../fountain/sanitizer";
 import { SidebarSection } from "./base";
 
@@ -209,11 +207,7 @@ export class SnippetsSection extends SidebarSection {
       });
 
       snippetDiv.addEventListener("click", () => {
-        if (snippet.category === "Beat JSON" && snippet.text) {
-          this.callbacks.insertTextAtCursor(snippet.text);
-        } else {
-          this.callbacks.scrollToRange(snippet.range);
-        }
+        this.callbacks.scrollToRange(snippet.range);
       });
 
       snippetDiv.addEventListener("contextmenu", (evt) => {
@@ -222,25 +216,19 @@ export class SnippetsSection extends SidebarSection {
 
         menu.addItem((mitem) => {
           mitem
-            .setTitle(snippet.category === "Beat JSON" ? "Insert Snippet" : "Jump to Script")
-            .setIcon(snippet.category === "Beat JSON" ? "plus-circle" : "arrow-up-right")
+            .setTitle("Jump to Script")
+            .setIcon("arrow-up-right")
             .onClick(() => {
-              if (snippet.category === "Beat JSON" && snippet.text) {
-                this.callbacks.insertTextAtCursor(snippet.text);
-              } else {
-                this.callbacks.scrollToRange(snippet.range);
-              }
+              this.callbacks.scrollToRange(snippet.range);
             });
         });
 
-        if (snippet.category !== "Beat JSON") {
-          menu.addItem((mitem) => {
-            mitem
-              .setTitle("Insert at Cursor")
-              .setIcon("plus-circle")
-              .onClick(() => this.insertSnippetAtCursor(script, snippet));
-          });
-        }
+        menu.addItem((mitem) => {
+          mitem
+            .setTitle("Insert at Cursor")
+            .setIcon("plus-circle")
+            .onClick(() => this.insertSnippetAtCursor(script, snippet));
+        });
 
         menu.addItem((mitem) => {
           mitem
@@ -261,11 +249,8 @@ export class SnippetsSection extends SidebarSection {
         menu.showAtMouseEvent(evt);
       });
 
-      // Hover Preview
       this.callbacks.hoverPreview.setup(snippetDiv, (container) => {
-        if (snippet.category === "Beat JSON" && snippet.text) {
-          container.setText(snippet.text);
-        } else if (snippet.bodyRange) {
+        if (snippet.bodyRange) {
           container.setText(script.sliceDocument(snippet.bodyRange).trim());
         } else if (snippet.range) {
           container.setText(script.sliceDocument(snippet.range).trim());
@@ -286,9 +271,7 @@ export class SnippetsSection extends SidebarSection {
 
   private insertSnippetAtCursor(script: FountainScript, snippet: Snippet) {
     let text = "";
-    if (snippet.category === "Beat JSON" && snippet.text) {
-      text = snippet.text;
-    } else if (snippet.bodyRange) {
+    if (snippet.bodyRange) {
       text = script.sliceDocument(snippet.bodyRange).trim();
     } else if (snippet.range) {
         // Fallback for older snippets or if bodyRange is missing
@@ -309,7 +292,7 @@ export class SnippetsSection extends SidebarSection {
     new RenameModal(this.callbacks.app, snippet.title || "", (newTitle) => {
       const view = this.callbacks.getView();
       if (!view) return;
-      const adapter = snippet.category === "Beat JSON" ? new BeatAdapter() : new FountainAdapter();
+      const adapter = new FountainAdapter();
       adapter.renameSnippet(view, snippet, newTitle);
       
       this.callbacks.requestSave();
@@ -325,10 +308,7 @@ export class SnippetsSection extends SidebarSection {
       () => {
         const view = this.callbacks.getView();
         if (!view) return;
-        const adapter =
-          snippet.category === "Beat JSON"
-            ? new BeatAdapter()
-            : new FountainAdapter();
+        const adapter = new FountainAdapter();
         adapter.deleteSnippet(view, snippet);
 
         this.callbacks.requestSave();

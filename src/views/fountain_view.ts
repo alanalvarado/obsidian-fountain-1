@@ -706,7 +706,13 @@ export class FountainView extends TextFileView {
     this.app.workspace.requestSaveLayout();
   }
 
-  onLoadFile(file: TFile): Promise<void> {
+  async onLoadFile(file: TFile): Promise<void> {
+    const data = await this.app.vault.read(file);
+    if (data.includes("[[@marker]]")) {
+      const migrated = data.replaceAll("[[@marker]]", "[[marker]]");
+      await this.app.vault.modify(file, migrated);
+      new Notice("Migrated legacy syntax: [[@marker]] -> [[marker]]");
+    }
     return super.onLoadFile(file);
   }
 
@@ -858,80 +864,7 @@ export class FountainView extends TextFileView {
     this.applyEditsToFile(computeRemoveSceneNumberEdits(this.cachedScript));
   }
 
-  /**
-   * Moves or copies a selection to a new snippet. If necessary creates the snippets
-   * section.
-   * @param cut Remove the original? (that is move the selection to snippets)
-   */
-  saveSelectionAsSnippet(cut: boolean): void {
-    if (this.state instanceof EditorViewState) {
-      const selection = this.state.getSelection();
-      if (selection) {
-        // Check if selection is in snippets section - if so, don't allow snipping
-        const snippetsStart = getSnippetsStartPosition(this.cachedScript);
-        if (snippetsStart !== null && selection.from >= snippetsStart) {
-          return;
-        }
 
-        if (cut) {
-          // Remove the selected text from the document
-          this.state.dispatchChanges({
-            from: selection.from,
-            to: selection.to,
-            insert: "",
-          });
-        }
-
-        // Add to snippets section
-        this.insertAfterSnippetsHeader(`${selection.text}\n\n===\n`);
-        this.requestSave();
-      }
-    }
-  }
-
-  private insertAfterSnippetsHeader(text: string): void {
-    if (!(this.state instanceof EditorViewState)) return;
-
-    const script = this.getScript();
-    if (!script || "error" in script) return;
-
-    const docText = this.state.getDocText();
-
-    // Find the "# Snippets" header position
-    let snippetsHeaderEnd: number | null = null;
-    for (const element of script.script) {
-      if (element.kind === "section") {
-        const sectionText = docText.slice(
-          element.range.start,
-          element.range.end,
-        );
-        if (
-          sectionText.toLowerCase().replace(/^#+/, "").trim() === "snippets"
-        ) {
-          snippetsHeaderEnd = element.range.end;
-          break;
-        }
-      }
-    }
-
-    if (snippetsHeaderEnd !== null) {
-      // Insert text right after the snippets header
-      this.state.dispatchChanges({
-        from: snippetsHeaderEnd,
-        to: snippetsHeaderEnd,
-        insert: `\n${text}`,
-      });
-    } else {
-      // If no snippets section exists, add it at the end
-      const docLength = docText.length;
-      const snippetsSection = `\n\n# Snippets\n${text}`;
-      this.state.dispatchChanges({
-        from: docLength,
-        to: docLength,
-        insert: snippetsSection,
-      });
-    }
-  }
 
   public refreshCharacterNoteCache(): void {
     const characters = Array.from(this.cachedScript.allCharacters.keys());

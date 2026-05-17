@@ -4,7 +4,6 @@ import { getActiveAdapter } from "../compatibility/registry";
 import { FountainView } from "../views/fountain_view";
 import { SidebarCallbacks, SidebarSection } from "./base";
 import { HoverPreviewManager } from "./hover_preview";
-import { ModeSection } from "./section_mode";
 import { MetricsSection } from "./section_metrics";
 import { TocSection } from "./section_toc";
 import { CharactersSection } from "./section_characters";
@@ -22,7 +21,6 @@ export class FountainSideBarView extends ItemView {
     super(leaf);
     this.hoverPreviewManager = new HoverPreviewManager();
     this.sections = [
-      new ModeSection(this.sidebarCallbacks()),
       new MetricsSection(this.sidebarCallbacks()),
       new TocSection(this.sidebarCallbacks()),
       new CharactersSection(this.sidebarCallbacks()),

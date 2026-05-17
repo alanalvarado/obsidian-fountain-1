@@ -19,8 +19,8 @@ import {
   moveSelectionToSnippets,
   convertDocumentFormat,
 } from "./commands";
-import { BeatAdapter } from "./compatibility/beat_adapter";
-import { FountainAdapter } from "./compatibility/fountain_adapter";
+import { BeatAdapter } from "./compatibility/beat/beat_adapter";
+import { FountainAdapter } from "./compatibility/fountain/fountain_adapter";
 import { setActiveAdapter } from "./compatibility/registry";
 import { applyEditsToFountainFile } from "./utils/edit_pipeline";
 import type { Edit } from "./fountain";
@@ -39,13 +39,11 @@ import { sanitizeSnippets } from "./fountain/sanitizer";
 import { addFountainMenuItems } from "./views/editor_context_menu";
 
 export interface FountainSettings {
-  compatibilityMode: "fountain" | "beat";
   characterNotesFolder: string;
   debugMode: boolean;
 }
 
 const DEFAULT_SETTINGS: FountainSettings = {
-  compatibilityMode: "fountain",
   characterNotesFolder: "Characters/",
   debugMode: false,
 };
@@ -86,22 +84,6 @@ export default class FountainPlugin extends Plugin {
     );
     this.addSettingTab(new FountainSettingTab(this.app, this));
 
-    // Register Explicit Format Conversion Commands
-    this.addCommand({
-      id: "fountain-convert-beat",
-      name: "Convert Document to Beat Format",
-      checkCallback: (checking: boolean) => {
-        const view = this.app.workspace.getActiveViewOfType(FountainView);
-        if (view) {
-          if (!checking) {
-            convertDocumentFormat(view, "beat");
-          }
-          return true;
-        }
-        return false;
-      }
-    });
-
     this.addCommand({
       id: "fountain-convert-standard",
       name: "Convert Document to Standard Fountain",
@@ -133,9 +115,8 @@ export default class FountainPlugin extends Plugin {
   }
 
   private updateActiveAdapter() {
-    const mode = this.settings.compatibilityMode || "fountain";
     Logger.initialize(this.settings.debugMode);
-    setActiveAdapter(mode === "beat" ? new BeatAdapter() : new FountainAdapter());
+    setActiveAdapter(new BeatAdapter());
   }
 
   private installFountainMdAutoRename() {
@@ -296,7 +277,7 @@ export default class FountainPlugin extends Plugin {
       checkCallback: (checking) => {
         const fv = this.app.workspace.getActiveViewOfType(FountainView);
         if (fv === null || !fv.hasSelection()) return false;
-        if (!checking) moveSelectionToSnippets(this.app, fv, true, this.settings.compatibilityMode);
+        if (!checking) moveSelectionToSnippets(fv, true);
         return true;
       },
     });
@@ -330,28 +311,6 @@ class FountainSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: "Fountain Plugin Settings" });
-
-    new Setting(containerEl)
-      .setName("Compatibility Mode")
-      .setDesc("Choose the default format for new documents. Beat mode enables [[colors]], [[markers]], and Beat JSON. Note: Existing documents auto-detect their own format.")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("fountain", "Standard Fountain")
-          .addOption("beat", "Beat Compatibility")
-          .setValue(this.plugin.settings.compatibilityMode)
-          .onChange(async (value: "fountain" | "beat") => {
-            this.plugin.settings.compatibilityMode = value;
-            await this.plugin.saveSettings();
-
-            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOUNTAIN);
-            for (const leaf of leaves) {
-              if (leaf.view instanceof FountainView) {
-                leaf.view.state.update();
-                leaf.view.updateLines();
-              }
-            }
-          }),
-      );
 
     new Setting(containerEl)
       .setName("Character Notes Folder")

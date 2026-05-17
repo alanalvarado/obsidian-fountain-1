@@ -1,6 +1,6 @@
 import { ICompatibilityAdapter } from "./types";
-import { FountainAdapter } from "./fountain_adapter";
-import { BeatAdapter } from "./beat_adapter";
+import { FountainAdapter } from "./fountain/fountain_adapter";
+import { BeatAdapter } from "./beat/beat_adapter";
 import type { FountainScript } from "../fountain/script";
 
 let globalAdapter: ICompatibilityAdapter = new FountainAdapter();
