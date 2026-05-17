@@ -5,4 +5,7 @@ module.exports = {
   transform: {
     "^.+.tsx?$": ["ts-jest", {}],
   },
+  moduleNameMapper: {
+    "^obsidian$": "<rootDir>/__mocks__/obsidian.ts",
+  },
 };

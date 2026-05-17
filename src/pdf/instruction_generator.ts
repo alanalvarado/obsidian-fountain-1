@@ -240,7 +240,6 @@ export function generateInstructions(
     hideBoneyard: true,
     hideNotes: false,
     hideSynopsis: options.hideSynopsis,
-    hideSnippets: true, // Always hide snippets in PDF
   });
 
   // Generate script instructions
@@ -797,5 +796,567 @@ function generateSynopsisInstructions(
   return {
     ...currentState,
     lastElementType: "synopsis",
+  };
+}
+
+/**
+ * Generates instructions for an action block
+ */
+function generateActionInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  action: Action,
+  fountainScript: FountainScript,
+  options: PDFOptions,
+): PageState {
+  // Extract styled text from all lines in the action block, preserving centering info
+  type ActionLineInfo = WrappedLine & { centered: boolean };
+
+  const actionLines: ActionLineInfo[] = [];
+
+  for (const line of action.lines) {
+    if (line.elements.length > 0) {
+      const styledSegments = extractStyledSegments(
+        line.elements,
+        fountainScript.document,
+        options,
+      );
+
+      const wrappedLines = wrapStyledText(
+        styledSegments,
+        pageState.charactersPerLine.action,
+        false,
+      );
+
+      // Add each wrapped line with the original centering information
+      for (const wrappedLine of wrappedLines) {
+        actionLines.push({
+          ...wrappedLine,
+          centered: line.centered,
+        });
+      }
+    } else {
+      actionLines.push({
+        segments: [],
+        marginMarks: [],
+        centered: line.centered,
+      });
+    }
+  }
+
+  // Add spacing before action block and ensure we have space for all lines
+  let currentState = addElementSpacing(pageState);
+  currentState = needLines(instructions, currentState, actionLines.length);
+
+  // Generate instructions for each line of the action block
+  for (const lineInfo of actionLines) {
+    // Ensure we have space for this line
+    currentState = needLines(instructions, currentState, 1);
+
+    // Generate instructions for the line with styled segments
+    if (lineInfo.segments.length > 0) {
+      let currentX: number;
+
+      if (lineInfo.centered) {
+        // Calculate line width for centering
+        let lineWidth = 0;
+        for (const segment of lineInfo.segments) {
+          lineWidth +=
+            segment.text.length * getCharacterWidth(pageState.fontSize);
+        }
+
+        // Center the line
+        currentX = (pageState.pageWidth - lineWidth) / 2;
+      } else {
+        // Use standard action indent
+        currentX = ACTION_INDENT;
+      }
+
+      for (const segment of lineInfo.segments) {
+        if (segment.text.length > 0) {
+          currentX = emitText(instructions, currentState, {
+            data: segment.text,
+            x: currentX,
+            bold: segment.bold || false,
+            italic: segment.italic || false,
+            underline: segment.underline || false,
+            color: segment.color || "black",
+            strikethrough: segment.strikethrough || false,
+            backgroundColor: segment.backgroundColor,
+          });
+        }
+      }
+
+      // Render margin marks in the left margin
+      if (lineInfo.marginMarks.length > 0) {
+        emitMarginMarks(instructions, currentState, lineInfo.marginMarks);
+      }
+    }
+
+    currentState = advanceLine(currentState);
+  }
+
+  return {
+    ...currentState,
+    lastElementType: "action",
+  };
+}
+
+function generateLyricsInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  lyrics: Lyrics,
+  fountainScript: FountainScript,
+  options: PDFOptions,
+): PageState {
+  // Extract styled text from all lines in the lyrics block, preserving centering info
+  // Lyrics are rendered like action lines but with italic styling
+  type LyricsLineInfo = WrappedLine & { centered: boolean };
+
+  const lyricsLines: LyricsLineInfo[] = [];
+
+  for (const line of lyrics.lines) {
+    if (line.elements.length > 0) {
+      const styledSegments = extractStyledSegments(
+        line.elements,
+        fountainScript.document,
+        options,
+      );
+
+      const wrappedLines = wrapStyledText(
+        styledSegments,
+        pageState.charactersPerLine.action,
+        true, // preserveWhitespace for lyrics
+      );
+
+      // Add each wrapped line with the original centering information
+      // Force italic styling for all segments in lyrics
+      for (const wrappedLine of wrappedLines) {
+        const italicSegments = wrappedLine.segments.map((segment) => ({
+          ...segment,
+          italic: true, // Force italics for lyrics
+        }));
+        lyricsLines.push({
+          segments: italicSegments,
+          marginMarks: wrappedLine.marginMarks,
+          centered: line.centered,
+        });
+      }
+    } else {
+      lyricsLines.push({
+        segments: [],
+        marginMarks: [],
+        centered: line.centered,
+      });
+    }
+  }
+
+  // Add spacing before lyrics block and ensure we have space for all lines
+  let currentState = addElementSpacing(pageState);
+  currentState = needLines(instructions, currentState, lyricsLines.length);
+
+  // Generate instructions for each line of the lyrics block
+  for (const lineInfo of lyricsLines) {
+    // Ensure we have space for this line
+    currentState = needLines(instructions, currentState, 1);
+
+    // Generate instructions for the line with styled segments
+    if (lineInfo.segments.length > 0) {
+      let currentX: number;
+
+      if (lineInfo.centered) {
+        // Calculate line width for centering
+        let lineWidth = 0;
+        for (const segment of lineInfo.segments) {
+          lineWidth +=
+            segment.text.length * getCharacterWidth(pageState.fontSize);
+        }
+
+        // Center the line
+        currentX = (pageState.pageWidth - lineWidth) / 2;
+      } else {
+        // Use standard action indent for lyrics
+        currentX = ACTION_INDENT;
+      }
+
+      for (const segment of lineInfo.segments) {
+        if (segment.text.length > 0) {
+          currentX = emitText(instructions, currentState, {
+            data: segment.text,
+            x: currentX,
+            bold: segment.bold || false,
+            italic: segment.italic || false,
+            underline: segment.underline || false,
+            color: segment.color || "black",
+            strikethrough: segment.strikethrough || false,
+            backgroundColor: segment.backgroundColor,
+          });
+        }
+      }
+
+      // Render margin marks in the left margin
+      if (lineInfo.marginMarks.length > 0) {
+        emitMarginMarks(instructions, currentState, lineInfo.marginMarks);
+      }
+    }
+
+    currentState = advanceLine(currentState);
+  }
+
+  return {
+    ...currentState,
+    lastElementType: "action", // Treat lyrics similar to action for spacing purposes
+  };
+}
+
+/**
+ * Emits instructions for prepared dialogue data
+ */
+function emitDialogueInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  preparedDialogue: PreparedDialogue,
+): PageState {
+  // Add spacing before dialogue block
+  let currentState = addElementSpacing(pageState);
+
+  const requiredLines = dialogueRequiredLines(preparedDialogue);
+
+  if (requiredLines <= 5) {
+    // If it is less than 5 lines, we will never break it across pages.
+    currentState = needLines(instructions, currentState, requiredLines);
+    return emitDialogueOnCurrentPage(
+      instructions,
+      currentState,
+      preparedDialogue,
+    );
+  }
+
+  // Complex case: We might be willing to split it across pages.
+  currentState = needLines(instructions, currentState, 5);
+
+  // But first see if asking for 5 lines moved us to a new page, and
+  // the dialogue fits on that page.
+  if (hasSpaceForLines(currentState, requiredLines)) {
+    // We have space for everything after ensuring minimum 5 lines
+    // because we might have moved to a new page AND the dialogue might fit on one page.
+    return emitDialogueOnCurrentPage(
+      instructions,
+      currentState,
+      preparedDialogue,
+    );
+  }
+
+  // Okay we have no choice we have to split the dialogue across pages
+  const [firstPart, secondPart] = splitDialogue(currentState, preparedDialogue);
+
+  currentState = emitDialogueOnCurrentPage(
+    instructions,
+    currentState,
+    firstPart,
+  );
+
+  // Emit (MORE)
+  emitText(instructions, currentState, {
+    data: "(MORE)",
+    x: PARENTHETICAL_INDENT,
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "black",
+    strikethrough: false,
+    backgroundColor: undefined,
+  });
+  currentState = advanceLine(currentState);
+
+  // Recurse with second part
+  return emitDialogueInstructions(instructions, currentState, secondPart);
+}
+
+/**
+ * Emits a complete dialogue block without splitting
+ */
+function emitDialogueOnCurrentPage(
+  instructions: Instruction[],
+  pageState: PageState,
+  preparedDialogue: PreparedDialogue,
+  layout: DialogueLayout = SINGLE_LAYOUT,
+): PageState {
+  let currentState = pageState;
+
+  // Emit character name
+  let name = preparedDialogue.characterName;
+  let exts = preparedDialogue.characterExtensions;
+  if (preparedDialogue.contd) {
+    exts = exts ? `${exts} (CONT'D)` : " (CONT'D)";
+  }
+
+  emitText(instructions, currentState, {
+    data: name,
+    x: layout.characterX,
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "black",
+    strikethrough: false,
+    backgroundColor: undefined,
+  });
+
+  // Emit extension separately if single-column
+  if (layout === SINGLE_LAYOUT && exts) {
+    emitText(instructions, currentState, {
+      data: exts,
+      x: layout.characterX + name.length * getCharacterWidth(currentState.fontSize),
+      bold: false,
+      italic: false,
+      underline: false,
+      color: "black",
+      strikethrough: false,
+      backgroundColor: undefined,
+    });
+  } else if (exts) {
+    // For dual-column, append to name for space reasons
+    emitText(instructions, currentState, {
+      data: ` ${exts}`,
+      x: layout.characterX + name.length * getCharacterWidth(currentState.fontSize),
+      bold: false,
+      italic: false,
+      underline: false,
+      color: "black",
+      strikethrough: false,
+      backgroundColor: undefined,
+    });
+  }
+  currentState = advanceLine(currentState);
+
+  // Emit content lines (interleaved parentheticals and dialogue)
+  for (const contentLine of preparedDialogue.contentLines) {
+    emitDialogueContentLine(instructions, currentState, contentLine, layout);
+    currentState = advanceLine(currentState);
+  }
+
+  return {
+    ...currentState,
+    lastElementType: "dialogue",
+  };
+}
+
+/**
+ * Emit a single line of dialogue content (parenthetical or wrapped
+ * dialogue line) at the current Y. Does NOT advance the line cursor.
+ * Shared between single-column and dual-column emission.
+ */
+function emitDialogueContentLine(
+  instructions: Instruction[],
+  pageState: PageState,
+  contentLine: PreparedDialogueContentLine,
+  layout: DialogueLayout,
+): void {
+  if (contentLine.kind === "parenthetical") {
+    emitText(instructions, pageState, {
+      data: contentLine.text,
+      x: layout.parentheticalX,
+      bold: false,
+      italic: false,
+      underline: false,
+      color: "black",
+      strikethrough: false,
+      backgroundColor: undefined,
+    });
+    return;
+  }
+
+  const dialogueLine = contentLine.wrappedLine;
+  if (dialogueLine.segments.length > 0) {
+    let currentX = layout.dialogueX;
+    for (const segment of dialogueLine.segments) {
+      if (segment.text.length > 0) {
+        currentX = emitText(instructions, pageState, {
+          data: segment.text,
+          x: currentX,
+          bold: segment.bold || false,
+          italic: segment.italic || false,
+          underline: segment.underline || false,
+          color: segment.color || "black",
+          strikethrough: segment.strikethrough || false,
+          backgroundColor: segment.backgroundColor,
+        });
+      }
+    }
+  }
+
+  if (dialogueLine.marginMarks.length > 0) {
+    emitMarginMarks(instructions, pageState, dialogueLine.marginMarks);
+  }
+}
+
+/**
+ * Emit a side-by-side dual-dialogue pair. Both columns share the same
+ * vertical position; the block advances by max(left, right) lines. v1
+ * does not split a pair across pages: if the pair doesn't fit on the
+ * current page, it ejects to a new page.
+ */
+function emitDualDialogueOnCurrentPage(
+  instructions: Instruction[],
+  pageState: PageState,
+  left: PreparedDialogue,
+  right: PreparedDialogue,
+): PageState {
+  let currentState = pageState;
+
+  // Both character names share the first line.
+  const leftName = left.characterName;
+  const leftExts = left.characterExtensions; // We'll just append in dual for space
+  emitText(instructions, currentState, {
+    data: leftExts ? `${leftName} ${leftExts}` : leftName,
+    x: DUAL_LEFT_LAYOUT.characterX,
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "black",
+    strikethrough: false,
+    backgroundColor: undefined,
+  });
+
+  const rightName = right.characterName;
+  const rightExts = right.characterExtensions;
+  emitText(instructions, currentState, {
+    data: rightExts ? `${rightName} ${rightExts}` : rightName,
+    x: DUAL_RIGHT_LAYOUT.characterX,
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "black",
+    strikethrough: false,
+    backgroundColor: undefined,
+  });
+  currentState = advanceLine(currentState);
+
+  const maxRows = Math.max(left.contentLines.length, right.contentLines.length);
+  for (let i = 0; i < maxRows; i++) {
+    const leftLine = left.contentLines[i];
+    const rightLine = right.contentLines[i];
+    if (leftLine !== undefined) {
+      emitDialogueContentLine(
+        instructions,
+        currentState,
+        leftLine,
+        DUAL_LEFT_LAYOUT,
+      );
+    }
+    if (rightLine !== undefined) {
+      emitDialogueContentLine(
+        instructions,
+        currentState,
+        rightLine,
+        DUAL_RIGHT_LAYOUT,
+      );
+    }
+    currentState = advanceLine(currentState);
+  }
+
+  return {
+    ...currentState,
+    lastElementType: "dialogue",
+  };
+}
+
+/**
+ * Generates instructions for a dialogue block
+ */
+function generateDialogueInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  dialogue: Dialogue,
+  fountainScript: FountainScript,
+  options: PDFOptions,
+): PageState {
+  const preparedDialogue = prepareDialogueData(
+    pageState,
+    dialogue,
+    fountainScript,
+    options,
+  );
+  return emitDialogueInstructions(instructions, pageState, preparedDialogue);
+}
+
+/**
+ * Generates instructions for a dual-dialogue pair. v1 does not split a
+ * pair across pages: if the combined block doesn't fit, the pair ejects
+ * to a new page.
+ */
+function generateDualDialogueInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  left: Dialogue,
+  right: Dialogue,
+  fountainScript: FountainScript,
+  options: PDFOptions,
+): PageState {
+  const dualWidths = {
+    dialogue: DUAL_COLUMN_WIDTH_CHARS,
+    parenthetical: DUAL_COLUMN_PARENTHETICAL_WIDTH_CHARS,
+  };
+  const leftPrepared = prepareDialogueData(
+    pageState,
+    left,
+    fountainScript,
+    options,
+    dualWidths,
+  );
+  const rightPrepared = prepareDialogueData(
+    pageState,
+    right,
+    fountainScript,
+    options,
+    dualWidths,
+  );
+
+  const requiredLines =
+    1 +
+    Math.max(leftPrepared.contentLines.length, rightPrepared.contentLines.length);
+
+  let currentState = addElementSpacing(pageState);
+  currentState = needLines(instructions, currentState, requiredLines);
+
+  return emitDualDialogueOnCurrentPage(
+    instructions,
+    currentState,
+    leftPrepared,
+    rightPrepared,
+  );
+}
+
+/**
+ * Generates instructions for a transition
+ */
+function generateTransitionInstructions(
+  instructions: Instruction[],
+  pageState: PageState,
+  transition: Transition,
+  fountainScript: FountainScript,
+): PageState {
+  // Transition text
+  const text = extractTransitionText(transition, fountainScript).toUpperCase();
+
+  // Add spacing before and ensure we have space
+  let currentState = addElementSpacing(pageState);
+  currentState = needLines(instructions, currentState, 1);
+
+  // Left-aligned at 6.0" (TRANSITION_INDENT)
+  emitText(instructions, currentState, {
+    data: text,
+    x: TRANSITION_INDENT,
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "black",
+    strikethrough: false,
+    backgroundColor: undefined,
+  });
+
+  return {
+    ...advanceLine(currentState),
+    lastElementType: "transition",
   };
 }

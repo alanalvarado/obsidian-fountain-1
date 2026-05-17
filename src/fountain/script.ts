@@ -397,33 +397,25 @@ export class FountainScript {
     let currentTitleRange: Range | undefined = undefined;
     let hasStrayContent = false;
 
-    const flush = () => {
+    const flush = (pageBreak?: FountainElement) => {
       if (currentContent.length > 0 || currentTitle !== undefined) {
-        if (currentTitle !== undefined) {
-          const bodyRange = currentContent.length > 0 
-            ? computeRange(currentContent[0].range, currentContent[currentContent.length - 1].range)
-            : (currentTitleRange ? { start: currentTitleRange.end, end: currentTitleRange.end } : { start: 0, end: 0 });
+        const bodyRange = currentContent.length > 0 
+          ? computeRange(currentContent[0].range, currentContent[currentContent.length - 1].range)
+          : (currentTitleRange ? { start: currentTitleRange.end, end: currentTitleRange.end } : { start: 0, end: 0 });
 
-          snippets.push({
-            title: currentTitle,
-            category: currentCategory,
-            range: currentTitleRange ? computeRange(currentTitleRange, bodyRange) : bodyRange,
-            titleRange: currentTitleRange,
-            bodyRange: bodyRange,
-            content: currentContent,
-          });
-        } else {
-          // Content exists but no title was set yet -> Stray content!
-          const realStray = currentContent.filter(fe => {
-              if (fe.kind === "action") {
-                  return fe.lines.some(l => l.elements.length > 0);
-              }
-              return true;
-          });
-          if (realStray.length > 0) {
-              hasStrayContent = true;
-          }
-        }
+        snippets.push({
+          title: currentTitle,
+          category: currentCategory,
+          range: currentTitleRange ? computeRange(currentTitleRange, bodyRange) : bodyRange,
+          titleRange: currentTitleRange,
+          bodyRange: bodyRange,
+          content: currentContent,
+          pageBreak,
+        });
+
+        currentContent = [];
+        currentTitle = undefined;
+        currentTitleRange = undefined;
       }
     };
 
@@ -445,7 +437,10 @@ export class FountainScript {
         }
       }
       
-      if (fe.kind === "page-break") continue;
+      if (fe.kind === "page-break") {
+        flush(fe);
+        continue;
+      }
       
       currentContent.push(fe);
     }
