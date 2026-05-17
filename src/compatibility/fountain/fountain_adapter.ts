@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 import { FountainView } from "../views/fountain_view";
 import { FountainScript } from "../fountain/script";
-import type { Edit } from "../fountain";
+import type { Edit, Range, Snippet } from "../fountain";
 import { ICompatibilityAdapter } from "./types";
 
 export class FountainAdapter implements ICompatibilityAdapter {
@@ -24,7 +24,7 @@ export class FountainAdapter implements ICompatibilityAdapter {
     
     if (currentStruct.snippetsHeaderRange) {
       // Block exists: Append new snippet to the very end of the file
-      view.replaceText({ start: script.document.length, end: script.document.length }, snippetText);
+      view.replaceText({ start: script.document.length, end: script.document.length }, `\n${snippetText}`);
     } else {
       // Block doesn't exist: Create with ONE separator and append to EOF
       const fullBlock = `\n\n===\n\n# Snippets\n\n${snippetText}`;
@@ -46,6 +46,18 @@ export class FountainAdapter implements ICompatibilityAdapter {
   }
 
   scrubProprietaryTags(script: FountainScript): Edit[] {
+    return [];
+  }
+
+  shouldExcludeFromBoneyard(content: string): boolean {
+    return false;
+  }
+
+  getCompatibilityMetadataRanges(script: FountainScript): Range[] {
+    return [];
+  }
+
+  parseCompatibilitySnippets(script: FountainScript, metadataRanges: Range[]): Snippet[] {
     return [];
   }
 }

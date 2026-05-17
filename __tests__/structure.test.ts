@@ -528,6 +528,7 @@ JOHN
 Hello world.
 
 # Snippets
+### Snippet One
 EXT. KITCHEN - DAY
 
 Some reusable kitchen scene.
@@ -535,7 +536,7 @@ Some reusable kitchen scene.
 MARY
 This is a snippet.
 
-===
+### Snippet Two
 INT. OFFICE - DAY
 
 Another snippet here.
@@ -550,18 +551,17 @@ Get back to work!`;
 
     // First snippet should contain kitchen scene
     const firstSnippet = structure.snippets[0];
+    expect(firstSnippet.title).toBe("Snippet One");
     expect(firstSnippet.content).toHaveLength(3); // scene, action, dialogue
     expect(firstSnippet.content[0].kind).toBe("scene");
     expect(firstSnippet.content[2].kind).toBe("dialogue");
-    expect(firstSnippet.pageBreak).toBeDefined();
-    expect(firstSnippet.pageBreak?.kind).toBe("page-break");
 
     // Second snippet should contain office scene
     const secondSnippet = structure.snippets[1];
+    expect(secondSnippet.title).toBe("Snippet Two");
     expect(secondSnippet.content).toHaveLength(3); // scene, action, dialogue
     expect(secondSnippet.content[0].kind).toBe("scene");
     expect(secondSnippet.content[2].kind).toBe("dialogue");
-    expect(secondSnippet.pageBreak).toBeUndefined(); // Last snippet has no page break
   });
 
   test("parses document with boneyard and snippets", () => {
@@ -578,6 +578,7 @@ This is in the boneyard.
 
 # Snippets
 
+### Snippet One
 EXT. STORE - DAY
 
 Snippet content.
@@ -594,35 +595,33 @@ Can I help you?`;
     // Should have one snippet
     expect(structure.snippets).toHaveLength(1);
     const snippet = structure.snippets[0];
-    expect(snippet.content).toHaveLength(4); // action, scene, action, dialogue
-    expect(snippet.content[0].kind).toBe("action");
-    expect(snippet.content[1].kind).toBe("scene");
-    expect(snippet.content[2].kind).toBe("action");
-    expect(snippet.content[3].kind).toBe("dialogue");
-    expect(snippet.pageBreak).toBeUndefined(); // Last snippet has no page break
+    expect(snippet.title).toBe("Snippet One");
+    expect(snippet.content).toHaveLength(3); // scene, action, dialogue
+    expect(snippet.content[0].kind).toBe("scene");
+    expect(snippet.content[1].kind).toBe("action");
+    expect(snippet.content[2].kind).toBe("dialogue");
   });
 
-  test("handles multiple snippets separated by page breaks", () => {
+  test("handles multiple snippets separated by depth-3 headers", () => {
     const scriptWithMultipleSnippets = `EXT. MAIN - DAY
 
 Main content.
 
 # Snippets
 
+### Snippet One
 First snippet content.
 
 ACTION
 Some action.
 
-===
-
+### Snippet Two
 Second snippet here.
 
 MORE_ACTION
 More action text.
 
-===
-
+### Snippet Three
 Third and final snippet.
 
 FINAL_ACTION
@@ -634,12 +633,12 @@ The end.`;
     expect(structure.snippets).toHaveLength(3);
 
     // Each snippet should have 2 elements (action line + dialogue/action)
+    expect(structure.snippets[0].title).toBe("Snippet One");
     expect(structure.snippets[0].content).toHaveLength(2);
-    expect(structure.snippets[0].pageBreak).toBeDefined();
+    expect(structure.snippets[1].title).toBe("Snippet Two");
     expect(structure.snippets[1].content).toHaveLength(2);
-    expect(structure.snippets[1].pageBreak).toBeDefined();
+    expect(structure.snippets[2].title).toBe("Snippet Three");
     expect(structure.snippets[2].content).toHaveLength(2);
-    expect(structure.snippets[2].pageBreak).toBeUndefined(); // Last snippet has no page break
   });
 
   test("handles snippets section with no page breaks", () => {
@@ -649,6 +648,7 @@ Main content.
 
 # Snippets
 
+### Snippet One
 Single snippet without page breaks.
 
 CHARACTER
@@ -661,8 +661,8 @@ More action text.`;
 
     expect(structure.snippets).toHaveLength(1);
     const snippet = structure.snippets[0];
+    expect(snippet.title).toBe("Snippet One");
     expect(snippet.content).toHaveLength(3); // action, dialogue, action
-    expect(snippet.pageBreak).toBeUndefined(); // Single snippet with no page break
   });
 
   test("handles empty snippets section", () => {
@@ -685,6 +685,7 @@ Main content.
 
 # Snippets
 
+### Snippet One
 First snippet.
 
 CHARACTER
@@ -692,6 +693,7 @@ Some dialogue.
 
 ===
 
+### Snippet Two
 Second snippet.
 
 MORE_CHARACTER
@@ -702,12 +704,12 @@ More dialogue.
     const script: FountainScript = parse(scriptWithTrailingPageBreak, {});
     const structure = script.structure();
 
-    // Should have 2 snippets, empty snippet at end should be ignored
+    // Should have 2 snippets, empty snippet at end should be ignored, trailing page breaks are skipped
     expect(structure.snippets).toHaveLength(2);
-    expect(structure.snippets[0].content).toHaveLength(2);
-    expect(structure.snippets[0].pageBreak).toBeDefined();
+    expect(structure.snippets[0].title).toBe("Snippet One");
+    expect(structure.snippets[0].content).toHaveLength(3);
+    expect(structure.snippets[1].title).toBe("Snippet Two");
     expect(structure.snippets[1].content).toHaveLength(2);
-    expect(structure.snippets[1].pageBreak).toBeDefined(); // Has page break but empty content after is ignored
   });
 
   test("snippets section includes other sections as content", () => {
@@ -717,14 +719,14 @@ Main content.
 
 # Snippets
 
+### Snippet One
 First snippet.
 
 # Some Other Section
 
 This should be part of first snippet.
 
-===
-
+### Snippet Two
 # Yet Another Section
 
 This should be second snippet.
@@ -738,12 +740,12 @@ More content here.`;
 
     // First snippet should include the section header
     const firstSnippet = structure.snippets[0];
-    expect(firstSnippet.content.length).toBeGreaterThan(2);
-    expect(firstSnippet.pageBreak).toBeDefined();
+    expect(firstSnippet.title).toBe("Snippet One");
+    expect(firstSnippet.content.length).toBeGreaterThanOrEqual(2);
 
     // Second snippet should also include section header
     const secondSnippet = structure.snippets[1];
-    expect(secondSnippet.content.length).toBeGreaterThan(2);
-    expect(secondSnippet.pageBreak).toBeUndefined(); // Last snippet has no page break
+    expect(secondSnippet.title).toBe("Snippet Two");
+    expect(secondSnippet.content.length).toBeGreaterThanOrEqual(2);
   });
 });

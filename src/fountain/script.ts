@@ -230,26 +230,14 @@ export class FountainScript {
       }
     }
 
-    // Detect all Beat metadata comments
-    const beatMetadataRanges: Range[] = [];
-    this.script.forEach((fe) => {
-      if (fe.kind === "action") {
-        fe.lines.forEach((line) => {
-          line.elements.forEach((el) => {
-            if (el.kind === "boneyard") {
-              const content = this.sliceDocument(el.range);
-              if (content.includes("BEAT:") && content.includes("END_BEAT")) {
-                beatMetadataRanges.push(el.range);
-              }
-            }
-          });
-        });
-      }
-    });
+    const activeAdapter = getActiveAdapter(this);
+    
+    // Detect all compatibility metadata comments
+    const compatibilityMetadataRanges = activeAdapter.getCompatibilityMetadataRanges(this);
 
-    const boneyard = this.findBoneyardBlocks(mainElements);
+    const boneyard = this.findBoneyardBlocks(mainElements, activeAdapter);
     const [snippets, hasStrayContent] = this.parseSnippets(snippetElements);
-    const beatSnippets = this.parseBeatSnippets(beatMetadataRanges);
+    const compatibilitySnippets = activeAdapter.parseCompatibilitySnippets(this, compatibilityMetadataRanges);
 
     // Health Check
     const errors: string[] = [];
@@ -259,13 +247,13 @@ export class FountainScript {
 
     return {
       sections,
-      snippets: [...snippets, ...beatSnippets],
+      snippets: [...snippets, ...compatibilitySnippets],
       boneyard,
       characters: Array.from(this.characterStats.entries())
         .map(([name, dialogueCount]) => ({ name, dialogueCount }))
         .sort((a, b) => b.dialogueCount - a.dialogueCount),
       metrics,
-      beatMetadata: beatMetadataRanges.length > 0 ? computeRange(beatMetadataRanges[0], beatMetadataRanges[beatMetadataRanges.length - 1]) : null,
+      beatMetadata: compatibilityMetadataRanges.length > 0 ? computeRange(compatibilityMetadataRanges[0], compatibilityMetadataRanges[compatibilityMetadataRanges.length - 1]) : null,
       snippetsHeaderRange: headerRanges.length > 0 ? headerRanges[0] : null,
       snippetsHeaderRanges: headerRanges,
       health: {
@@ -275,7 +263,7 @@ export class FountainScript {
     };
   }
 
-  private findBoneyardBlocks(elements: FountainElement[]): Snippets {
+  private findBoneyardBlocks(elements: FountainElement[], adapter: any): Snippets {
     const blocks: Snippets = [];
     const visited = new Set<string>();
 
@@ -286,7 +274,7 @@ export class FountainScript {
       if (el.kind === "boneyard") {
         visited.add(key);
         const content = this.sliceDocument(el.range);
-        if (content.includes("BEAT:") && content.includes("END_BEAT"))
+        if (adapter.shouldExcludeFromBoneyard(content))
           return;
 
         blocks.push({
@@ -322,31 +310,7 @@ export class FountainScript {
     return blocks;
   }
 
-  private parseBeatSnippets(metadataRanges: Range[]): Snippets {
-    const allSnippets: Snippets = [];
-    metadataRanges.forEach((range) => {
-      const content = this.sliceDocument(range);
-      const jsonMatch = content.match(/({[\s\S]*})/);
-      if (jsonMatch) {
-        try {
-          const data = JSON.parse(jsonMatch[1]);
-          if (data.Snippets && Array.isArray(data.Snippets)) {
-            data.Snippets.forEach((s: any, i: number) => {
-              allSnippets.push({
-                title: s.title || "Untitled",
-                category: "Beat JSON",
-                range: range,
-                content: [],
-                text: s.text || "",
-                index: i,
-              });
-            });
-          }
-        } catch (e) {}
-      }
-    });
-    return allSnippets;
-  }
+
 
   /** Split `script` at the FIRST depth-1 `# Snippets` section.
    *  Returns elements before, elements between (if interleaved), and elements after.
@@ -399,6 +363,20 @@ export class FountainScript {
 
     const flush = (pageBreak?: FountainElement) => {
       if (currentContent.length > 0 || currentTitle !== undefined) {
+        const hasActualText = currentContent.some(fe => {
+          if (fe.kind === "scene" || fe.kind === "dialogue" || fe.kind === "section") return true;
+          if (fe.kind === "action") {
+            const raw = this.sliceDocument(fe.range).trim();
+            return raw.length > 0;
+          }
+          return false;
+        });
+
+        if (currentTitle === undefined && !hasActualText) {
+          currentContent = [];
+          return;
+        }
+
         const bodyRange = currentContent.length > 0 
           ? computeRange(currentContent[0].range, currentContent[currentContent.length - 1].range)
           : (currentTitleRange ? { start: currentTitleRange.end, end: currentTitleRange.end } : { start: 0, end: 0 });
@@ -438,7 +416,6 @@ export class FountainScript {
       }
       
       if (fe.kind === "page-break") {
-        flush(fe);
         continue;
       }
       
