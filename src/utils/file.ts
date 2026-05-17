@@ -22,7 +22,37 @@ export function getCharacterNotePath(app: App, sourcePath: string, characterName
         targetDir += "/";
     }
 
-    return `${targetDir}${characterName}.md`.replace(/\/+/g, "/");
+    const defaultPath = `${targetDir}${characterName}.md`.replace(/\/+/g, "/");
+
+    const normalizedTarget = targetDir.replace(/\/+/g, "/");
+
+    // Deterministic scan of target directory files for alias matching
+    const markdownFiles = app.vault.getMarkdownFiles();
+    const characterLower = characterName.toLowerCase();
+    
+    for (const file of markdownFiles) {
+        if (normalizedTarget ? file.path.startsWith(normalizedTarget) : !file.path.includes("/")) {
+            const cache = app.metadataCache.getFileCache(file);
+            if (cache && cache.frontmatter) {
+                let aliases = cache.frontmatter.aliases;
+                if (aliases) {
+                    if (typeof aliases === "string") {
+                        aliases = [aliases];
+                    }
+                    if (Array.isArray(aliases)) {
+                        const hasAlias = aliases.some(alias => 
+                            typeof alias === "string" && alias.trim().toLowerCase() === characterLower
+                        );
+                        if (hasAlias) {
+                            return file.path;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return defaultPath;
 }
 
 export async function getOrCreateCharacterNote(app: App, sourcePath: string, characterName: string): Promise<TFile | null> {
@@ -55,6 +85,22 @@ export async function getOrCreateCharacterNote(app: App, sourcePath: string, cha
     
     if (file && !("children" in file)) {
         return file as TFile;
+    }
+    return null;
+}
+
+export async function renameCharacterFile(app: App, oldPath: string, newName: string): Promise<TFile | null> {
+    const file = app.vault.getAbstractFileByPath(oldPath);
+    if (file && !("children" in file)) {
+        const parentDir = oldPath.substring(0, oldPath.lastIndexOf("/"));
+        const newPath = parentDir ? `${parentDir}/${newName}.md` : `${newName}.md`;
+        
+        try {
+            await app.fileManager.renameFile(file, newPath);
+            return app.vault.getAbstractFileByPath(newPath) as TFile;
+        } catch (e) {
+            Logger.error("file_utility", `Failed to rename character note: ${oldPath} to ${newPath}`, e);
+        }
     }
     return null;
 }

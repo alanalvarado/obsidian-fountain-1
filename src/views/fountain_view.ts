@@ -6,6 +6,7 @@ import {
   type ViewStateResult,
   type WorkspaceLeaf,
   setIcon,
+  Notice,
 } from "obsidian";
 import {
   applyEditsToFountainFile,
@@ -40,7 +41,10 @@ import {
   type ViewState,
   getSnippetsStartPosition,
 } from "./view_state";
-import { getCharacterNotePath, getOrCreateCharacterNote } from "../utils/file";
+import { getCharacterNotePath, getOrCreateCharacterNote, renameCharacterFile } from "../utils/file";
+import { addFrontmatterAlias, ensureScreenplayReference } from "../utils/note";
+import { FountainRenameModal } from "../modals/rename_modal";
+import { VIEW_TYPE_SIDEBAR } from "../sidebar/sidebar_view";
 
 export const VIEW_TYPE_FOUNTAIN = "fountain";
 
@@ -147,7 +151,6 @@ export class FountainView extends TextFileView {
       startReadingModeHere: (r) => this.state.scrollToHere(r),
       requestSave: () => this.requestSave(),
       replaceText: (r, s) => this.replaceText(r, s),
-      insertTextAtCursor: (s) => this.insertTextAtCursor(s),
       navigateToSceneContent: (r) => this.navigateToSceneContent(r),
       insertSceneAt: (pos) => this.insertSceneAt(pos),
       insertSectionAt: (pos) => this.insertSectionAt(pos),
@@ -954,6 +957,9 @@ export class FountainView extends TextFileView {
     const file = await getOrCreateCharacterNote(this.app, this.file?.path ?? "", characterName);
     
     if (file) {
+        // Dynamic backlink reference ensuring
+        await ensureScreenplayReference(this.app, file, this.file?.path ?? "");
+
         const inNewLeaf = event.metaKey || event.ctrlKey;
         const leaf = inNewLeaf ? this.app.workspace.getLeaf("tab") : this.leaf;
         await leaf.openFile(file);
@@ -963,4 +969,103 @@ export class FountainView extends TextFileView {
   public hasCharacterNote(characterName: string): boolean {
     return this.characterNoteCache.has(characterName.trim());
   }
+
+  public promptRenameCharacter(oldName: string): void {
+    new FountainRenameModal(this.app, oldName, async (newName) => {
+      await this.renameCharacter(oldName, newName);
+    }).open();
+  }
+
+  public async renameCharacter(oldName: string, newName: string): Promise<void> {
+    const edits: Edit[] = [];
+    const oldNameTrimmed = oldName.trim();
+    const newNameTrimmed = newName.trim();
+
+    if (!oldNameTrimmed || !newNameTrimmed || oldNameTrimmed === newNameTrimmed) {
+      return;
+    }
+
+    const oldNameUpper = oldNameTrimmed.toUpperCase();
+    const newNameUpper = newNameTrimmed.toUpperCase();
+
+    // 1. Dialogue character header edits
+    for (const el of this.cachedScript.script) {
+      if (el.kind === "dialogue") {
+        const charRange = el.characterRange;
+        const charText = this.cachedScript.sliceDocument(charRange);
+        const regex = new RegExp("\\b" + escapeRegExp(oldNameUpper) + "\\b", "gi");
+        if (regex.test(charText)) {
+          const replacement = charText.replace(regex, (match) => {
+            return match === match.toUpperCase() ? newNameUpper : newNameTrimmed;
+          });
+          edits.push({
+            range: charRange,
+            replacement,
+          });
+        }
+      }
+    }
+
+    // 2. Action paragraph edits with case preservation
+    for (const el of this.cachedScript.script) {
+      if (el.kind === "action") {
+        const actionText = this.cachedScript.sliceDocument(el.range);
+        const regex = new RegExp("\\b" + escapeRegExp(oldNameTrimmed) + "\\b", "gi");
+        if (regex.test(actionText)) {
+          const replacement = preserveCaseReplace(actionText, oldNameTrimmed, newNameTrimmed);
+          edits.push({
+            range: el.range,
+            replacement,
+          });
+        }
+      }
+    }
+
+    // Apply text edits to the file in a single atomic batch
+    if (edits.length > 0) {
+      await this.applyEditsToFile(edits);
+    }
+
+    // 3. Rename note file and add alias
+    const exactPath = getCharacterNotePath(this.app, this.file?.path ?? "", oldNameTrimmed);
+    const hasNote = this.characterNoteCache.has(oldNameTrimmed);
+    
+    if (hasNote) {
+      // Physical rename
+      const renamedFile = await renameCharacterFile(this.app, exactPath, newNameTrimmed);
+      if (renamedFile) {
+        // Add alias in frontmatter (Option B)
+        await addFrontmatterAlias(this.app, renamedFile, oldNameTrimmed);
+      }
+    }
+
+    new Notice(`Renamed "${oldNameTrimmed}" to "${newNameTrimmed}" successfully.`);
+    
+    // Refresh and re-render
+    this.refreshCharacterNoteCache();
+    const sidebar = this.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEBAR)[0]?.view as any;
+    if (sidebar && typeof sidebar.onFileChange === "function") {
+      sidebar.onFileChange();
+    }
+  }
+}
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function preserveCaseReplace(text: string, oldWord: string, newWord: string): string {
+  const regex = new RegExp("\\b" + escapeRegExp(oldWord) + "\\b", "gi");
+  return text.replace(regex, (match) => {
+    if (match === match.toUpperCase()) {
+      return newWord.toUpperCase();
+    }
+    if (match === match.toLowerCase()) {
+      return newWord.toLowerCase();
+    }
+    if (match[0] === match[0].toUpperCase()) {
+      return newWord.charAt(0).toUpperCase() + newWord.slice(1).toLowerCase();
+    }
+    return newWord;
+  });
 }

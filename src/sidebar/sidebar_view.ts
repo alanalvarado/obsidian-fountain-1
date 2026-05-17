@@ -97,6 +97,8 @@ interface SidebarCallbacks {
   openCharacterNote: (name: string, event: MouseEvent) => void;
   /** Check if a character has an associated profile note. */
   hasCharacterNote: (name: string) => boolean;
+  /** Trigger global character rename. */
+  renameCharacter: (name: string) => void;
 }
 
 abstract class SidebarSection {
@@ -950,6 +952,21 @@ class CharactersSection extends SidebarSection {
               }
             });
 
+            // Bind contextmenu for character renaming
+            charDiv.addEventListener("contextmenu", (evt) => {
+              evt.preventDefault();
+              const menu = new Menu();
+              menu.addItem((mitem) => {
+                mitem
+                  .setTitle("Rename Character")
+                  .setIcon("pencil")
+                  .onClick(() => {
+                    this.callbacks.renameCharacter(char.name);
+                  });
+              });
+              menu.showAtMouseEvent(evt);
+            });
+
             // "Open Note" icon (visible on hover via CSS)
             charDiv.createDiv({ cls: "open-note-icon" }, (iconDiv) => {
               setIcon(iconDiv, "eye");
@@ -1069,6 +1086,10 @@ export class FountainSideBarView extends ItemView {
       hasCharacterNote: (name) => {
         const view = this.theFountainView();
         return view ? view.hasCharacterNote(name) : false;
+      },
+      renameCharacter: (name) => {
+        const view = this.theFountainView();
+        if (view) view.promptRenameCharacter(name);
       },
     };
   }
