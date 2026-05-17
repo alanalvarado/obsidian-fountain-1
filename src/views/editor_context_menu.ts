@@ -174,7 +174,7 @@ export function addFountainMenuItems(
 
   menu.addItem((item: any) => {
     item
-      .setTitle(isBoneyard ? "Restore from Boneyard" : "Omit (Send to Boneyard)")
+      .setTitle(isBoneyard ? "Restore from Boneyard" : "Send to Boneyard")
       .setIcon(isBoneyard ? "corner-up-left" : "archive")
       .onClick(() => toggleBoneyardComment(view));
   });

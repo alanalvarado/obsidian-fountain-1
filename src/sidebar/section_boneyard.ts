@@ -35,7 +35,7 @@ export class BoneyardSection extends SidebarSection {
           contentArea.createDiv({ cls: ["boneyard-item", "sidebar-card"] }, (item) => {
             // Header row: title + hover-revealed quick action
             item.createDiv({ cls: "boneyard-header" }, (header) => {
-              header.createSpan({ text: block.title || `Omission ${i + 1}`, cls: "boneyard-title" });
+              header.createSpan({ text: block.title || `Boneyard Block ${i + 1}`, cls: "boneyard-title" });
               header.createDiv({ cls: "boneyard-actions" }, (actions) => {
                 actions.createEl("button", {
                   cls: "snippet-action-btn",
@@ -87,13 +87,13 @@ export class BoneyardSection extends SidebarSection {
 
               menu.addItem((mitem) => {
                 mitem
-                  .setTitle("Delete Omission")
+                  .setTitle("Delete from Boneyard")
                   .setIcon("trash")
                   .onClick(() => {
                     new FountainConfirmModal(
                       this.callbacks.app,
-                      "Delete Boneyard Omission",
-                      "Are you sure you want to delete this boneyard omission?",
+                      "Delete Boneyard Block",
+                      "Are you sure you want to delete this boneyard block?",
                       () => {
                         this.callbacks.replaceText(block.range, "");
                         this.callbacks.requestSave();
@@ -118,11 +118,11 @@ export class BoneyardSection extends SidebarSection {
           });
         });
         // Boneyard status bar
-        const omissionCount = boneyard.length;
+        const boneyardBlockCount = boneyard.length;
         sectionDiv.createDiv({ cls: "sidebar-footer" }, (footer) => {
           footer.createSpan({
             cls: "sidebar-status-text",
-            text: `${omissionCount} omission${omissionCount !== 1 ? "s" : ""} in boneyard`,
+            text: `${boneyardBlockCount} boneyard block${boneyardBlockCount !== 1 ? "s" : ""}`,
           });
         });
       }

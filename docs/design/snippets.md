@@ -2,7 +2,7 @@
 
 ## Objective
 
-Establish a formal separation between **Snippets** (EOF plain-text scratchpad) and **Boneyard** (inline contextual omissions).
+Establish a formal separation between **Snippets** (EOF plain-text scratchpad) and **Boneyard** (inline contextual blocks).
 
 ## 1. Core Definition: What is a Snippet?
 

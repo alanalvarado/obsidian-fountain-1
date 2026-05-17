@@ -1,10 +1,10 @@
-# Boneyard (Inline Omissions)
+# Boneyard (Inline Blocks)
 
 ## Objective
 Formalize the structural role of the **Boneyard** feature within the Obsidian NewFountain ecosystem to prevent functional overlap with Snippets.
 
 ## 1. Core Definition: What is the Boneyard?
-The Boneyard is designed for **Inline, Contextual Omissions**. 
+The Boneyard is designed for **Inline, Contextual Blocks**. 
 - **Purpose**: Temporarily commenting out specific blocks of text (dialogue, action lines) without losing their precise location in the script hierarchy.
 - **Workflow Context**: "I am cutting John's second sentence here, but I want to keep it embedded in the scene so I can instantly toggle it back into the flow if I change my mind."
 
@@ -22,12 +22,12 @@ It looks like a death trap.
 ```
 
 ### Syntax Rules
-- **Block Comment (`/* ... */`)**: Any text wrapped in these block comments is parsed as a Boneyard omission.
+- **Block Comment (`/* ... */`)**: Any text wrapped in these block comments is parsed as a Boneyard block.
 - **Location**: Boneyard items remain exactly where they were written. They are never relocated to the EOF (End Of File).
 
 ## 3. Sidebar Integration
 - The Sidebar's **BONEYARD** section parses all `/* ... */` blocks in the document.
-- Clicking a Boneyard omission in the sidebar navigates the editor to the exact line where the cut was made.
+- Clicking a Boneyard block in the sidebar navigates the editor to the exact line where the cut was made.
 - The sidebar provides a "Restore to Script" action, which strips the `/*` and `*/` markers, instantly reintegrating the text back into the active draft.
 
 ## 4. Distinction from Snippets
