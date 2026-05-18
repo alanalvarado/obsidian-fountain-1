@@ -21,8 +21,8 @@ import {
 } from "./utils";
 import { calculateMetrics } from "./metrics";
 import { getActiveAdapter } from "../compatibility/registry";
-import { isLinkNote } from "./links";
-import { parseMarker } from "../utils/markers";
+import { isLinkNote } from "./extensions/links";
+import { parseMarker } from "./extensions/markers";
 
 export class FountainScript {
   readonly titlePage: TitlePage | null;

@@ -189,19 +189,27 @@ describe("Links", () => {
   });
 
   describe("hideNotes interaction", () => {
-    it("removes link notes alongside plain notes when hideNotes is on", () => {
+    it("removes link notes when hideLinks is on", () => {
+      const script = parse(
+        "Action with [[a regular note]] and [[>a-link]] inline.",
+      );
+      const filtered = script.withHiddenElementsRemoved({ hideLinks: true });
+      expect(extractLinks(filtered.script)).toHaveLength(0);
+    });
+
+    it("removes regular notes when hideNotes is on but keeps link notes", () => {
       const script = parse(
         "Action with [[a regular note]] and [[>a-link]] inline.",
       );
       const filtered = script.withHiddenElementsRemoved({ hideNotes: true });
-      expect(extractLinks(filtered.script)).toHaveLength(0);
+      expect(extractLinks(filtered.script)).toHaveLength(1);
 
       let anyNoteFound = false;
       for (const el of filtered.script) {
         if (el.kind === "action") {
           for (const line of el.lines) {
             for (const tel of line.elements) {
-              if (tel.kind === "note") anyNoteFound = true;
+              if (tel.kind === "note" && !isLinkNote(tel)) anyNoteFound = true;
             }
           }
         }

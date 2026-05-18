@@ -1,5 +1,4 @@
-import { FountainScript } from "../fountain/script";
-import type { Edit } from "../fountain";
+import { FountainScript, Edit } from "../../fountain";
 import { scrubBeatProprietaryTags, scrubBeatString } from "./beat_tag_scrubber";
 
 export const BEAT_BOILERPLATE_START = "If you're seeing this, you can remove the following stuff - BEAT: ";

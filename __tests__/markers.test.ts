@@ -1,6 +1,5 @@
-import { formatMarkerTag, parseMarker } from "../src/utils/markers";
 import { parse } from "../src/fountain/parser";
-import { extractNotes } from "../src/fountain";
+import { extractNotes, formatMarkerTag, parseMarker } from "../src/fountain";
 
 describe("markers utility", () => {
   describe("formatMarkerTag", () => {

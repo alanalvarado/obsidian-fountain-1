@@ -14,9 +14,9 @@ import {
   type Line,
   type StyledTextElement,
   intersect,
+  parseMarker,
 } from "../fountain";
 import { fountainScriptField } from "./state";
-import { parseMarker } from "../utils/markers";
 export { createFountainEditorPlugin };
 
 class MarkerBadgeWidget extends WidgetType {

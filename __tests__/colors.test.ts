@@ -1,4 +1,4 @@
-import { isSupportedColor, formatColorTag, updateLineColor } from "../src/utils/colors";
+import { isSupportedColor, formatColorTag, updateLineColor } from "../src/fountain";
 
 describe("colors utility", () => {
   describe("isSupportedColor", () => {

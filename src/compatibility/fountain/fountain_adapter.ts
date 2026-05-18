@@ -1,8 +1,8 @@
 import { Notice } from "obsidian";
-import { FountainView } from "../views/fountain_view";
-import { FountainScript } from "../fountain/script";
-import type { Edit, Range, Snippet } from "../fountain";
-import { ICompatibilityAdapter } from "./types";
+import { FountainView } from "../../views/fountain_view";
+import { FountainScript } from "../../fountain";
+import type { Edit, Range, Snippet } from "../../fountain";
+import { ICompatibilityAdapter } from "../types";
 
 export class FountainAdapter implements ICompatibilityAdapter {
   

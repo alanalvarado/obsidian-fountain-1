@@ -1,6 +1,6 @@
-import type { FountainElement, Line, Note } from "./types";
-import { dialogueLines } from "./utils";
-import type { FountainScript } from "./script";
+import type { FountainElement, Line, Note } from "../../types";
+import { dialogueLines } from "../../utils";
+import type { FountainScript } from "../../script";
 
 export const LINK_NOTE_KIND = ">";
 

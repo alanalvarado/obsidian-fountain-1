@@ -17,8 +17,8 @@ import {
   isLinkNote,
   maybeEscapeLeadingSpaces,
   parseLinkContent,
+  parseMarker,
 } from "../fountain";
-import { parseMarker } from "../utils/markers";
 
 /**
  * Render styled text into `parent`.
@@ -76,7 +76,7 @@ function renderTextElement(
 
     case "note": {
       const isLink = isLinkNote(el);
-      const marker = isLink ? { isMarker: false, color: undefined } : parseMarker(el, script.document);
+      const marker = isLink ? { isMarker: false, color: undefined, text: "", markerWord: "" } : parseMarker(el, script.document);
 
       if (settings.hideNotes && !isLink && !marker.isMarker) return false;
       if (settings.hideLinks && isLink) return false;

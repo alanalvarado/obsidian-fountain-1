@@ -1,6 +1,4 @@
-import { FountainScript } from "../fountain/script";
-import type { Edit } from "../fountain";
-import { SceneHeading, Section } from "../fountain/types";
+import { FountainScript, Edit, SceneHeading, Section } from "../../fountain";
 import { Logger } from "../../utils/logger";
 
 export function scrubBeatProprietaryTags(script: FountainScript): Edit[] {

@@ -1,6 +1,4 @@
-import { FountainScript } from "../fountain/script";
-import { SceneHeading, Section } from "../fountain/types";
-import { isSupportedColor } from "../../utils/colors";
+import { FountainScript, SceneHeading, Section, isSupportedColor } from "../../fountain";
 
 export function processBeatAST(script: FountainScript): void {
   script.script.forEach(el => {

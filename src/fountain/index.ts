@@ -68,12 +68,6 @@ export {
 
 export { removeElementsFromText } from "./removal";
 
-export {
-  LINK_NOTE_KIND,
-  type ParsedLink,
-  isLinkNote,
-  parseLinkContent,
-  extractLinks,
-  findLinkAtOffset,
-  targetRefersTo,
-} from "./links";
+export * from "./extensions/links";
+export * from "./extensions/colors";
+export * from "./extensions/markers";

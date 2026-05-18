@@ -3,9 +3,13 @@ import { FountainView } from "./fountain_view";
 import { EditorViewState } from "./editor_view_state";
 import { toggleBoneyardComment } from "../commands/boneyard_commands";
 import { moveSelectionToSnippets } from "../commands/format_commands";
-import { findSceneAtOffset } from "../fountain";
-import { SUPPORTED_COLORS, updateLineColor } from "../utils/colors";
-import { formatMarkerTag } from "../utils/markers";
+import {
+  findSceneAtOffset,
+  SUPPORTED_COLORS,
+  updateLineColor,
+  BEAT_COLORS,
+  formatMarkerTag,
+} from "../fountain";
 
 export function addFountainMenuItems(
   app: App,

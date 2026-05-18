@@ -35,8 +35,9 @@ import {
   FountainSideBarView,
   VIEW_TYPE_SIDEBAR,
 } from "./sidebar/sidebar_view";
-import { sanitizeSnippets } from "./fountain/sanitizer";
 import { addFountainMenuItems } from "./views/editor_context_menu";
+import { BEAT_COLORS } from "./fountain";
+import { sanitizeSnippets } from "./fountain/sanitizer";
 
 export interface FountainSettings {
   characterNotesFolder: string;
@@ -55,6 +56,9 @@ export default class FountainPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
     Logger.initialize(this.settings.debugMode);
+    
+
+
     this.updateActiveAdapter();
     this.registerView(VIEW_TYPE_FOUNTAIN, (leaf) => new FountainView(leaf));
     this.registerExtensions(["fountain"], VIEW_TYPE_FOUNTAIN);

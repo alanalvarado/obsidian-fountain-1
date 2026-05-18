@@ -1,6 +1,6 @@
-import { FountainScript } from "../fountain/script";
-import type { Edit, Range, Snippet } from "../fountain";
-import { ICompatibilityAdapter } from "./types";
+import { FountainScript } from "../../fountain";
+import type { Edit, Range, Snippet } from "../../fountain";
+import { ICompatibilityAdapter } from "../types";
 import { FountainAdapter } from "../fountain/fountain_adapter";
 import { FountainView } from "../../views/fountain_view";
 

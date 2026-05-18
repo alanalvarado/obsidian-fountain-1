@@ -1,5 +1,4 @@
-import { FountainScript } from "../fountain/script";
-import type { Range, Snippet } from "../fountain";
+import { FountainScript, Range, Snippet } from "../../fountain";
 
 export function shouldExcludeBeatFromBoneyard(content: string): boolean {
   return content.includes("BEAT:") && content.includes("END_BEAT");

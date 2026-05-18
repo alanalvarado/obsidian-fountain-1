@@ -16,7 +16,6 @@ export const SUPPORTED_COLORS = [
 ] as const;
 
 export type SupportedColor = typeof SUPPORTED_COLORS[number];
-
 /**
  * Checks case-insensitively if a color name is standard and supported.
  */
