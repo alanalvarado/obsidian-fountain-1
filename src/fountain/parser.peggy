@@ -145,7 +145,7 @@ Note "note"
  { return mkNote(range(), noteKind, noteText); }
 
 NoteText
- =  (!("]]"/"\n\n") .)* { return range(); }
+ =  (!("]]" / "\n\n" / ("\n" &StructuralMarkerStart)) .)* { return range(); }
 
 NoteKind
  = "+"   { return "+"; }
@@ -173,7 +173,7 @@ Synopsis
  = lines:SynopsisLine+ { return mkSynopsis(range(), lines); }
 
 SynopsisLine
- = "=" @SynopsisLineInner NewLineOrEndOfInput
+ = !PageBreakPattern "=" @SynopsisLineInner NewLineOrEndOfInput
 
 SynopsisLineInner
  = elements:LineTextElement* { return mkLine(range(), mergeText(elements)); }

@@ -698,6 +698,19 @@ describe("Note multi-line behavior", () => {
       },
     ],
   );
+  test_script(
+    "unclosed note terminates if structural marker starts next line",
+    "[[ foo\n# Section\n",
+    [
+      {
+        kind: "action",
+        lines: [
+          { elements: [{ kind: "note" }] },
+        ],
+      },
+      { kind: "section" },
+    ],
+  );
 });
 
 describe("Emphasis in actions", () => {
@@ -816,6 +829,14 @@ describe("Synopsis handling", () => {
   test_script("Three or more equals is still a page break", "===\n", [
     { kind: "page-break", range: { start: 0, end: 4 } },
   ]);
+  test_script(
+    "Synopsis followed by a page break does not swallow the page break",
+    "= Synopsis\n===\n",
+    [
+      { kind: "synopsis", range: { start: 0, end: 11 } },
+      { kind: "page-break", range: { start: 11, end: 15 } },
+    ],
+  );
 });
 
 describe("Lyrics handling", () => {
