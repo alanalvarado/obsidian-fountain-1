@@ -6,6 +6,8 @@ export type ShowHideSettings = {
   hideNotes?: boolean; // undefined also false
   hideBoneyard?: boolean; // undefined also false
   hideSnippets?: boolean; // undefined also false
+  hideMarkers?: boolean; // undefined also false
+  hideLinks?: boolean; // undefined also false
 };
 
 // ============================================================================

@@ -7,6 +7,7 @@ import type {
   Range,
   ScriptHealth,
   ScriptStructure,
+  ShowHideSettings,
   Snippets,
   TextElementWithNotesAndBoneyard,
   TitlePage,
@@ -20,6 +21,8 @@ import {
 } from "./utils";
 import { calculateMetrics } from "./metrics";
 import { getActiveAdapter } from "../compatibility/registry";
+import { isLinkNote } from "./links";
+import { parseMarker } from "../utils/markers";
 
 export class FountainScript {
   readonly titlePage: TitlePage | null;
@@ -428,12 +431,7 @@ export class FountainScript {
   /**
    * Returns a copy of this FountainScript with hidden elements removed.
    */
-  withHiddenElementsRemoved(settings: {
-    hideBoneyard?: boolean;
-    hideNotes?: boolean;
-    hideSynopsis?: boolean;
-    hideSnippets?: boolean;
-  }): FountainScript {
+  withHiddenElementsRemoved(settings: ShowHideSettings): FountainScript {
     const filteredScript: FountainElement[] = [];
 
     for (const element of this.script) {
@@ -457,7 +455,7 @@ export class FountainScript {
 
   private filterLines(
     lines: Line[],
-    settings: { hideBoneyard?: boolean; hideNotes?: boolean },
+    settings: ShowHideSettings,
   ): Line[] {
     return lines
       .map((line) => this.filterLine(line, settings))
@@ -466,12 +464,7 @@ export class FountainScript {
 
   private filterFountainElement(
     element: FountainElement,
-    settings: {
-      hideBoneyard?: boolean;
-      hideNotes?: boolean;
-      hideSynopsis?: boolean;
-      hideSnippets?: boolean;
-    },
+    settings: ShowHideSettings,
   ): FountainElement | null {
     switch (element.kind) {
       case "synopsis": {
@@ -503,7 +496,7 @@ export class FountainScript {
 
   private filterLine(
     line: Line,
-    settings: { hideBoneyard?: boolean; hideNotes?: boolean },
+    settings: ShowHideSettings,
   ): Line | null {
     const filteredElements = line.elements.filter((element) =>
       this.shouldKeepElement(element, settings),
@@ -517,10 +510,12 @@ export class FountainScript {
 
   private shouldKeepElement(
     element: TextElementWithNotesAndBoneyard,
-    settings: { hideBoneyard?: boolean; hideNotes?: boolean },
+    settings: ShowHideSettings,
   ): boolean {
     switch (element.kind) {
       case "note":
+        if (isLinkNote(element)) return !settings.hideLinks;
+        if (parseMarker(element, this.document).isMarker) return !settings.hideMarkers;
         return !settings.hideNotes;
       case "boneyard":
         return !settings.hideBoneyard;

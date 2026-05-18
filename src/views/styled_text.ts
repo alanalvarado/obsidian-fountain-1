@@ -18,6 +18,7 @@ import {
   maybeEscapeLeadingSpaces,
   parseLinkContent,
 } from "../fountain";
+import { parseMarker } from "../utils/markers";
 
 /**
  * Render styled text into `parent`.
@@ -74,9 +75,14 @@ function renderTextElement(
       return true;
 
     case "note": {
-      if (settings.hideNotes) return false;
+      const isLink = isLinkNote(el);
+      const marker = isLink ? { isMarker: false, color: undefined } : parseMarker(el, script.document);
 
-      if (isLinkNote(el)) {
+      if (settings.hideNotes && !isLink && !marker.isMarker) return false;
+      if (settings.hideLinks && isLink) return false;
+      if (settings.hideMarkers && marker.isMarker) return false;
+
+      if (isLink) {
         const { target, displayText } = parseLinkContent(
           script.sliceDocument(el.textRange),
         );
@@ -93,15 +99,34 @@ function renderTextElement(
         return true;
       }
 
-      const markerWord = extractMarginMarker(el);
-      if (markerWord !== null) {
+      if (marker.isMarker) {
         parent.createEl(
           "span",
-          { cls: "note-margin", attr: dataRange(el.range) },
+          { cls: "fountain-marker-badge", attr: dataRange(el.range) },
           (span) => {
-            span.appendText(markerWord);
+            span.appendText(".");
+            if (marker.color) {
+              span.classList.add("has-color");
+              span.classList.add(`color-${marker.color}`);
+              span.style.setProperty("--item-color", `var(--fountain-color-${marker.color})`);
+            }
           },
         );
+
+        parent.classList.add("fountain-marker-line");
+        if (marker.color) {
+          parent.classList.add("has-color");
+          parent.classList.add(`color-${marker.color}`);
+          parent.style.setProperty("--item-color", `var(--fountain-color-${marker.color})`);
+        }
+        
+        if (marker.text) {
+          parent.appendText(maybeEscapeLeadingSpaces(true, marker.text));
+        } else {
+          // Zero-width space ensures the line-box is generated, preventing stacked badges
+          parent.createEl("span", { text: "\u200B", attr: { "aria-hidden": "true" } });
+        }
+        
         return true;
       }
 

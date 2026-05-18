@@ -7,6 +7,7 @@ import {
   type PluginValue,
   ViewPlugin,
   type ViewUpdate,
+  WidgetType,
 } from "@codemirror/view";
 import {
   type FountainScript,
@@ -15,7 +16,30 @@ import {
   intersect,
 } from "../fountain";
 import { fountainScriptField } from "./state";
+import { parseMarker } from "../utils/markers";
 export { createFountainEditorPlugin };
+
+class MarkerBadgeWidget extends WidgetType {
+  constructor(private markerWord: string, private color?: string) {
+    super();
+  }
+
+  toDOM() {
+    const span = document.createElement("span");
+    span.className = "fountain-marker-badge";
+    span.textContent = ".";
+    if (this.color) {
+      span.classList.add("has-color");
+      span.classList.add(`color-${this.color.toLowerCase()}`);
+      span.style.setProperty("--item-color", `var(--fountain-color-${this.color.toLowerCase()})`);
+    }
+    return span;
+  }
+
+  eq(other: MarkerBadgeWidget) {
+    return this.markerWord === other.markerWord && this.color === other.color;
+  }
+}
 
 /// This extends CodeMirror 6 to syntax highlight fountain.
 /// Note that we are using a custom Code Mirror instance,
@@ -33,6 +57,7 @@ class FountainEditorPlugin implements PluginValue {
   private note: Decoration;
   private noteMargin: Decoration;
   private noteLink: Decoration;
+  private markerTag: Decoration;
   private centered: Decoration;
   private dualMarkerValid: Decoration;
   private dualMarkerInvalid: Decoration;
@@ -51,6 +76,7 @@ class FountainEditorPlugin implements PluginValue {
     this.note = Decoration.mark({ class: "note" });
     this.noteMargin = Decoration.mark({ class: "note-margin-editor" });
     this.noteLink = Decoration.mark({ class: "fountain-link-editor" });
+    this.markerTag = Decoration.mark({ class: "fountain-marker-tag" });
     this.centered = Decoration.mark({ class: "centered" });
     this.dualMarkerValid = Decoration.mark({
       class: "dialogue-dual-marker-valid",
@@ -91,11 +117,52 @@ class FountainEditorPlugin implements PluginValue {
     }
   }
 
-  private decorateLines(builder: RangeSetBuilder<Decoration>, lines: Line[]) {
+  private decorateLines(builder: RangeSetBuilder<Decoration>, lines: Line[], fscript: FountainScript) {
     for (const line of lines) {
       // Apply centered decoration to the entire line if it's centered
       if (line.centered) {
         builder.add(line.range.start, line.range.end, this.centered);
+      }
+
+      // Check if this line contains a marker
+      let markerInfo: { markerWord: string; color?: string } | null = null;
+      for (const tel of line.elements) {
+        if (tel.kind === "note") {
+          const parsed = parseMarker(tel, fscript.document);
+          if (parsed.isMarker) {
+            markerInfo = parsed;
+            break; // Currently support one marker per line
+          }
+        }
+      }
+
+      if (markerInfo) {
+        // 1. Add line background decoration
+        const lineClass = markerInfo.color 
+          ? `fountain-marker-line has-color color-${markerInfo.color}` 
+          : "fountain-marker-line";
+        const styleAttr = markerInfo.color
+          ? { style: `--item-color: var(--fountain-color-${markerInfo.color})` }
+          : undefined;
+          
+        builder.add(
+          line.range.start,
+          line.range.start,
+          Decoration.line({ 
+            class: lineClass,
+            attributes: styleAttr,
+          }),
+        );
+        
+        // 2. Add widget decoration for the premium swallowtail badge
+        builder.add(
+          line.range.start,
+          line.range.start,
+          Decoration.widget({
+            widget: new MarkerBadgeWidget(markerInfo.markerWord, markerInfo.color),
+            side: -1,
+          }),
+        );
       }
 
       for (const tel of line.elements) {
@@ -121,8 +188,21 @@ class FountainEditorPlugin implements PluginValue {
               noteDeco = this.noteLink;
             } else if (tel.noteKind === "todo") {
               noteDeco = this.noteTodo;
-            } else if (tel.noteKind.startsWith("@")) {
-              noteDeco = this.noteMargin;
+            } else {
+              const parsed = parseMarker(tel, fscript.document);
+              if (parsed.isMarker) {
+                if (parsed.color) {
+                  const style = `--item-color: var(--fountain-color-${parsed.color})`;
+                  noteDeco = Decoration.mark({
+                    class: `fountain-marker-tag has-color color-${parsed.color}`,
+                    attributes: { style },
+                  });
+                } else {
+                  noteDeco = this.markerTag;
+                }
+              } else if (tel.noteKind.startsWith("@")) {
+                noteDeco = this.noteMargin;
+              }
             }
             builder.add(tel.range.start, tel.range.end, noteDeco);
             break;
@@ -255,7 +335,7 @@ class FountainEditorPlugin implements PluginValue {
 
           case "synopsis":
             builder.add(el.range.start, el.range.end, synopsis);
-            this.decorateLines(builder, el.lines);
+            this.decorateLines(builder, el.lines, fscript);
             break;
 
           case "page-break":
@@ -305,7 +385,7 @@ class FountainEditorPlugin implements PluginValue {
                   item.line.range.end,
                   words,
                 );
-                this.decorateLines(builder, [item.line]);
+                this.decorateLines(builder, [item.line], fscript);
               }
             }
             break;
@@ -313,7 +393,7 @@ class FountainEditorPlugin implements PluginValue {
 
           case "action":
             builder.add(el.range.start, el.range.end, action);
-            this.decorateLines(builder, el.lines);
+            this.decorateLines(builder, el.lines, fscript);
             break;
 
           case "transition":

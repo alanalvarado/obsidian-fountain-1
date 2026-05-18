@@ -369,6 +369,22 @@ export class FountainView extends TextFileView {
               updateSettings({ hideBoneyard: !(state.hideBoneyard || false) }),
             ),
         );
+        menu.addItem((item) =>
+          item
+            .setTitle("Markers")
+            .setChecked(!(state.hideMarkers || false))
+            .onClick(() =>
+              updateSettings({ hideMarkers: !(state.hideMarkers || false) }),
+            ),
+        );
+        menu.addItem((item) =>
+          item
+            .setTitle("Links")
+            .setChecked(!(state.hideLinks || false))
+            .onClick(() =>
+              updateSettings({ hideLinks: !(state.hideLinks || false) }),
+            ),
+        );
         menu.addSeparator();
         if (this.blackoutCharacter()) {
           menu.addItem((item) => {
