@@ -554,8 +554,9 @@ function createColorMenuItemTitle(colorName: string | null, label: string): Docu
   
   if (colorName) {
     const cssColor = colorName.toLowerCase();
-    circle.style.backgroundColor = cssColor;
-    circle.style.border = `1px solid ${cssColor}`;
+    const hexColor = BEAT_COLORS[cssColor] || cssColor;
+    circle.style.backgroundColor = hexColor;
+    circle.style.border = `1px solid ${hexColor}`;
   } else {
     circle.style.border = "1px solid var(--text-muted)";
     circle.style.backgroundColor = "transparent";

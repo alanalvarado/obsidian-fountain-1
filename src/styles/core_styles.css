@@ -1527,34 +1527,7 @@
 	flex-shrink: 0;
 }
 
-/* BEAT Color Palette Variables */
-:is(.screenplay, .screenplay-toc, .screenplay-index-cards) {
-	--fountain-color-red: #ef0049;
-	--fountain-color-blue: #0081ef;
-	--fountain-color-green: #00df79;
-	--fountain-color-pink: #fe83df;
-	--fountain-color-magenta: #ec008c;
-	--fountain-color-gray: #808080;
-	--fountain-color-grey: #808080;
-	--fountain-color-purple: #b520da;
-	--fountain-color-yellow: #fbc82d;
-	--fountain-color-goldenrod: #d7940f;
-	--fountain-color-rose: #ecb898;
-	--fountain-color-buff: #766456;
-	--fountain-color-cherry: #ec5a96;
-	--fountain-color-teal: #0ce0e3;
-	--fountain-color-orange: #ffa10d;
-	--fountain-color-brown: #a96a07;
-	--fountain-color-lightgray: #dcdcdc;
-	--fountain-color-darkgray: #aaaaaa;
-	--fountain-color-verydarkgray: #646464;
-	--fountain-color-backgroundgray: #292a2d;
-	--fountain-color-fdxremoval: #ffbedc;
-	--fountain-color-mint: #48e7d3;
-	--fountain-color-violet: #743ee6;
-	--fountain-color-olive: #4d932c;
-	--fountain-color-cyan: #07bdeb;
-}
+
 
 /* Color Highlighting Rules */
 
@@ -2065,8 +2038,8 @@
 }
 
 .screenplay .fountain-marker-line.has-color,
-.screenplay .scene-heading[class*="color-"],
-.screenplay .section[class*="color-"] {
+.screenplay .scene-heading[class*="beat-color-"],
+.screenplay .section[class*="beat-color-"] {
 	color: var(--item-color) !important;
 }
 

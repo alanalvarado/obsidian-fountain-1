@@ -487,7 +487,7 @@ function renderIndexCard(
             ? `--item-color: ${
                 heading.color.startsWith("#")
                   ? heading.color
-                  : `var(--fountain-color-${heading.color})`
+                  : `var(--beat-color-${heading.color})`
               }`
             : "",
         },
@@ -656,7 +656,7 @@ function renderSection(
             ? `--item-color: ${
                 sec.color.startsWith("#")
                   ? sec.color
-                  : `var(--fountain-color-${sec.color})`
+                  : `var(--beat-color-${sec.color})`
               }`
             : "",
         },

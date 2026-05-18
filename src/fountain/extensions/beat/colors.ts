@@ -16,6 +16,35 @@ export const SUPPORTED_COLORS = [
 ] as const;
 
 export type SupportedColor = typeof SUPPORTED_COLORS[number];
+
+export const BEAT_COLORS: Record<string, string> = {
+  red: "#ef0049",
+  blue: "#0081ef",
+  green: "#00df79",
+  pink: "#fe83df",
+  magenta: "#ec008c",
+  gray: "#808080",
+  grey: "#808080",
+  purple: "#b520da",
+  yellow: "#fbc82d",
+  goldenrod: "#d7940f",
+  rose: "#ecb898",
+  buff: "#766456",
+  cherry: "#ec5a96",
+  teal: "#0ce0e3",
+  orange: "#ffa10d",
+  brown: "#a96a07",
+  lightgray: "#dcdcdc",
+  darkgray: "#aaaaaa",
+  verydarkgray: "#646464",
+  backgroundgray: "#292a2d",
+  fdxremoval: "#ffbedc",
+  mint: "#48e7d3",
+  violet: "#743ee6",
+  olive: "#4d932c",
+  cyan: "#07bdeb",
+};
+
 /**
  * Checks case-insensitively if a color name is standard and supported.
  */

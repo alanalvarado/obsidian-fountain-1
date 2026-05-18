@@ -30,8 +30,8 @@ class MarkerBadgeWidget extends WidgetType {
     span.textContent = ".";
     if (this.color) {
       span.classList.add("has-color");
-      span.classList.add(`color-${this.color.toLowerCase()}`);
-      span.style.setProperty("--item-color", `var(--fountain-color-${this.color.toLowerCase()})`);
+      span.classList.add(`beat-color-${this.color.toLowerCase()}`);
+      span.style.setProperty("--item-color", `var(--beat-color-${this.color.toLowerCase()})`);
     }
     return span;
   }
@@ -139,10 +139,10 @@ class FountainEditorPlugin implements PluginValue {
       if (markerInfo) {
         // 1. Add line background decoration
         const lineClass = markerInfo.color 
-          ? `fountain-marker-line has-color color-${markerInfo.color}` 
+          ? `fountain-marker-line has-color beat-color-${markerInfo.color}` 
           : "fountain-marker-line";
         const styleAttr = markerInfo.color
-          ? { style: `--item-color: var(--fountain-color-${markerInfo.color})` }
+          ? { style: `--item-color: var(--beat-color-${markerInfo.color})` }
           : undefined;
           
         builder.add(
@@ -192,9 +192,9 @@ class FountainEditorPlugin implements PluginValue {
               const parsed = parseMarker(tel, fscript.document);
               if (parsed.isMarker) {
                 if (parsed.color) {
-                  const style = `--item-color: var(--fountain-color-${parsed.color})`;
+                  const style = `--item-color: var(--beat-color-${parsed.color})`;
                   noteDeco = Decoration.mark({
-                    class: `fountain-marker-tag has-color color-${parsed.color}`,
+                    class: `fountain-marker-tag has-color beat-color-${parsed.color}`,
                     attributes: { style },
                   });
                 } else {
@@ -259,10 +259,10 @@ class FountainEditorPlugin implements PluginValue {
               const style = `--item-color: ${
                 el.color.startsWith("#")
                   ? el.color
-                  : `var(--fountain-color-${el.color})`
+                  : `var(--beat-color-${el.color})`
               }`;
               sceneDeco = Decoration.mark({
-                class: `scene-heading color-${el.color}`,
+                class: `scene-heading beat-color-${el.color}`,
                 attributes: { style },
               });
 
@@ -300,10 +300,10 @@ class FountainEditorPlugin implements PluginValue {
               const style = `--item-color: ${
                 el.color.startsWith("#")
                   ? el.color
-                  : `var(--fountain-color-${el.color})`
+                  : `var(--beat-color-${el.color})`
               }`;
               sectionDeco = Decoration.mark({
-                class: `section color-${el.color}`,
+                class: `section beat-color-${el.color}`,
                 attributes: { style },
               });
 

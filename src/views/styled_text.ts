@@ -107,8 +107,8 @@ function renderTextElement(
             span.appendText(".");
             if (marker.color) {
               span.classList.add("has-color");
-              span.classList.add(`color-${marker.color}`);
-              span.style.setProperty("--item-color", `var(--fountain-color-${marker.color})`);
+              span.classList.add(`beat-color-${marker.color}`);
+              span.style.setProperty("--item-color", `var(--beat-color-${marker.color})`);
             }
           },
         );
@@ -116,8 +116,8 @@ function renderTextElement(
         parent.classList.add("fountain-marker-line");
         if (marker.color) {
           parent.classList.add("has-color");
-          parent.classList.add(`color-${marker.color}`);
-          parent.style.setProperty("--item-color", `var(--fountain-color-${marker.color})`);
+          parent.classList.add(`beat-color-${marker.color}`);
+          parent.style.setProperty("--item-color", `var(--beat-color-${marker.color})`);
         }
         
         if (marker.text) {

@@ -57,7 +57,10 @@ export default class FountainPlugin extends Plugin {
     await this.loadSettings();
     Logger.initialize(this.settings.debugMode);
     
-
+    // Inject Beat compatible colors globally onto document root
+    for (const [color, hex] of Object.entries(BEAT_COLORS)) {
+      document.documentElement.style.setProperty(`--beat-color-${color}`, hex);
+    }
 
     this.updateActiveAdapter();
     this.registerView(VIEW_TYPE_FOUNTAIN, (leaf) => new FountainView(leaf));
