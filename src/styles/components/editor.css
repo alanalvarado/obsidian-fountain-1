@@ -1,0 +1,292 @@
+/* Ensure the editor fills the page but keeps the padding */
+.screenplay.cm-editor {
+	height: auto !important;
+	min-height: 11in;
+	width: 8.5in !important;
+	padding: 1in 1in 1in 1.5in !important;
+	margin: 20px auto !important;
+	background-color: var(--background-primary) !important;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--background-modifier-border);
+	box-sizing: border-box !important;
+}
+
+.screenplay.cm-editor .cm-line .dialogue-character-name {
+	padding-left: 2.0in;
+}
+
+.screenplay.cm-editor .cm-scroller {
+	overflow: visible !important;
+	display: block !important;
+}
+
+.screenplay.cm-editor .cm-content,
+.screenplay.cm-editor .cm-line {
+	width: 100% !important;
+	max-width: 100% !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	line-height: inherit !important;
+}
+
+/* Position the gutter in the left margin */
+.screenplay.cm-editor .cm-gutters {
+	position: absolute !important;
+	left: -1.2em !important;
+	/* Position it within the 1.5in left margin */
+	background-color: transparent !important;
+	border: none !important;
+	z-index: 10;
+}
+
+.custom-editor-component {
+	height: auto !important;
+	display: flex;
+	flex-direction: column;
+}
+
+.custom-editor-component .cm-editor {
+	height: auto !important;
+}
+
+/* Editor-mode counterpart: the .cm-line gets this class via Decoration.line()
+   so block-level CSS (max-width) can constrain wrapping exactly like the
+   reading-mode .dialogue-words div does. */
+.screenplay.cm-editor .cm-line.dialogue-words-line {
+	padding-left: 1.0in;
+	max-width: calc(1.0in + 37ch);
+	box-sizing: border-box;
+}
+
+/* Phone editor-mode: match reading-mode phone geometry for dialogue-words-line */
+.is-phone .screenplay.cm-editor .cm-line.dialogue-words-line {
+	padding-left: 0.45in;
+	max-width: calc(100% - 0.55in);
+	box-sizing: border-box;
+}
+
+/* Dual-dialogue caret marker in the editor. Valid carets (the marker
+   formed a pair) render dimmed; invalid carets (orphan or unpaired)
+   render in error color so the writer can see the marker had no effect. */
+.screenplay .cm-line .dialogue-dual-marker-valid {
+	color: var(--text-faint);
+}
+
+.screenplay .cm-line .dialogue-dual-marker-invalid {
+	color: var(--text-error);
+	font-weight: bold;
+}
+
+/* Link styling in editor view */
+.screenplay .cm-line .fountain-link-editor {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+/* Margin note styling in editor view */
+.screenplay .cm-line .note-margin-editor {
+	color: var(--text-accent);
+	font-style: normal;
+	background: rgba(var(--background-modifier-accent-rgb), 0.2);
+	border-radius: 3px;
+	padding: 0 2px;
+}
+
+/**************** page break */
+/* For now we generate hr in the reading view, so this
+   is specific to the editor */
+
+.screenplay .cm-line .page-break {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	color: var(--text-muted);
+	padding: 2.5em 0;
+	font-weight: normal;
+}
+
+.screenplay .cm-line .page-break::before,
+.screenplay .cm-line .page-break::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--text-muted);
+	opacity: 0.5;
+}
+
+.screenplay .cm-line .page-break::before {
+	margin-right: 2em;
+}
+
+.screenplay .cm-line .page-break::after {
+	margin-left: 2em;
+}
+
+.screenplay .cm-cursorLayer .cm-cursor {
+	border-left: 3.2px solid var(--caret-color);
+	margin-left: -1.6px;
+}
+
+.screenplay .cm-selectionLayer .cm-selectionBackground {
+	background-color: var(--text-selection) !important;
+}
+
+.screenplay .cm-content ::selection {
+	color: inherit !important;
+}
+
+.screenplay.cm-editor:focus,
+.cm-editor.cm-focused {
+	outline: none !important;
+	outline-offset: 0 !important;
+}
+
+/* Folding support */
+
+.screenplay .cm-gutters {
+	background-color: transparent;
+	border-right-color: transparent;
+}
+
+.screenplay .cm-foldGutter {
+	width: 16px;
+	padding: 0 2px;
+	background: transparent;
+	color: var(--text-muted);
+}
+
+/* Vertically center the fold arrows inside CodeMirror's gutter cells */
+.screenplay.cm-editor .cm-foldGutter .cm-gutterElement {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+}
+
+.screenplay .cm-foldGutter span {
+	color: var(--text-muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.screenplay .cm-foldGutter span:hover,
+.screenplay .cm-foldGutter .cm-gutterElement:hover span {
+	color: var(--text-normal);
+}
+
+.screenplay .cm-foldPlaceholder {
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border-hover);
+	border-radius: 3px;
+	padding: 0 4px;
+	margin: 0 2px;
+	font-size: 0.8em;
+	cursor: pointer;
+}
+
+.screenplay .cm-foldPlaceholder:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+/* Search panel styling to match Obsidian */
+
+.screenplay .cm-panel.cm-search {
+	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+	padding: 6px 8px;
+}
+
+.screenplay .cm-panel.cm-search .cm-textfield {
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-normal);
+	border: none;
+	border-radius: var(--input-radius);
+	padding: var(--input-padding);
+	height: var(--input-height);
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+	font-weight: var(--input-font-weight);
+	box-shadow: var(--input-shadow);
+	box-sizing: border-box;
+}
+
+.screenplay .cm-panel.cm-search .cm-textfield:hover {
+	box-shadow: var(--input-shadow-hover);
+}
+
+.screenplay .cm-panel.cm-search .cm-textfield:focus {
+	border: none;
+	outline: none;
+	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.screenplay .cm-panel.cm-search .cm-button {
+	background-color: var(--interactive-normal);
+	background-image: none;
+	color: var(--text-normal);
+	border: none;
+	border-radius: var(--input-radius);
+	padding: var(--input-padding);
+	height: var(--input-height);
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+	font-weight: var(--input-font-weight);
+	box-shadow: var(--input-shadow);
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.screenplay .cm-panel.cm-search .cm-button:hover {
+	background-color: var(--interactive-hover);
+	box-shadow: var(--input-shadow-hover);
+}
+
+.screenplay .cm-panel.cm-search label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	white-space: nowrap;
+}
+
+.screenplay .cm-panel.cm-search input[type="checkbox"] {
+	margin: 0;
+}
+
+.screenplay .cm-panel.cm-search [name="close"] {
+	color: var(--text-muted);
+	font-size: 16px;
+	background-image: none;
+	box-shadow: none;
+	border: none;
+	height: auto;
+}
+
+.screenplay .cm-panel.cm-search [name="close"]:hover {
+	color: var(--text-normal);
+	background-color: transparent;
+	box-shadow: none;
+}
+
+.screenplay .cm-searchMatch {
+	background-color: var(--text-highlight-bg) !important;
+}
+
+.screenplay .cm-searchMatch-selected {
+	background-color: var(--interactive-accent) !important;
+	color: var(--text-on-accent) !important;
+}
+
+/* Reset color for the tag itself in the editor */
+.screenplay.cm-editor .color-tag {
+	color: var(--text-normal) !important;
+	opacity: 0.5;
+}

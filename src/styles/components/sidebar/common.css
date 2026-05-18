@@ -1,0 +1,185 @@
+/* Sidebar Styles */
+.sidebar-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 8px 8px 24px 8px;
+	/* 24px bottom clears Obsidian's ~20px native status bar */
+}
+
+/* Sidebar section card wrapper — zero-padding flex shell.
+   Each child manages its own padding. overflow:hidden + border-radius
+   clips all children (including footer) at the card edge naturally. */
+.sidebar-section {
+	background-color: var(--background-secondary);
+	border-radius: 8px;
+	padding: 0;
+	margin-bottom: 12px;
+	border: 1px solid var(--background-modifier-border);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Unified section title bar — every section uses this */
+.section-title-bar {
+	flex: 0 0 auto;
+	padding: 10px 12px 6px 12px;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-muted);
+	letter-spacing: 0.15em;
+	text-align: center;
+}
+
+/* Fixed-height content wrapper for sections that don't scroll
+   (Mode, Metrics) — provides padding that sidebar-section no longer has */
+.section-content {
+	flex: 0 0 auto;
+	padding: 6px 12px 12px 12px;
+}
+
+/* Unified Section Headers */
+.section-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	background-color: var(--background-secondary-alt);
+	cursor: pointer;
+	user-select: none;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.section-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--text-accent);
+	letter-spacing: 0.05em;
+}
+
+/* Sidebar Flex Layout */
+.sidebar-flex-container {
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	overflow: hidden;
+}
+
+.sidebar-content-area {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 4px 8px 8px 8px;
+}
+
+.sidebar-footer {
+	flex: 0 0 auto;
+	padding: 6px 12px;
+	background-color: var(--background-secondary);
+	border-top: 1px solid var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 28px;
+	z-index: 10;
+}
+
+.sidebar-status-text {
+	font-size: 10px;
+	color: var(--fountain-hint, var(--text-muted));
+	font-style: italic;
+	white-space: nowrap;
+	overflow: hidden;
+	font-family: var(--font-interface);
+	text-align: center;
+}
+
+.sidebar-footer.is-warning {
+	background-color: rgba(var(--color-yellow-rgb), 0.1);
+}
+
+.sidebar-footer.is-warning .sidebar-status-text {
+	color: var(--text-warning);
+	font-weight: 500;
+}
+
+.sidebar-status-button {
+	font-size: 10px;
+	padding: 2px 6px;
+	height: 20px;
+	line-height: 1;
+	background-color: var(--interactive-accent);
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	margin-left: 8px;
+	flex-shrink: 0;
+}
+
+.sidebar-status-button:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+/* Mode Section value display */
+.mode-value {
+	font-family: var(--font-monospace);
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--interactive-accent);
+	text-align: center;
+	margin-top: 4px;
+}
+
+/* TOC toggle pill labels */
+.toc-controls {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 0 8px 0;
+}
+
+.toc-toggle-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 2px 6px;
+	border-radius: 4px;
+	transition: background-color 0.15s, color 0.15s;
+	user-select: none;
+}
+
+.toc-toggle-label:has(input:checked) {
+	color: var(--interactive-accent);
+	background-color: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.toc-toggle-label input[type="checkbox"] {
+	display: none;
+}
+
+/* Shared card base for snippet and boneyard items */
+.sidebar-card {
+	margin: 8px 4px;
+	padding: 12px;
+	background-color: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-card:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

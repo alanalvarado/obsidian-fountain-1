@@ -1,0 +1,76 @@
+.metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.metric-item {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.metric-label {
+	font-size: 9px;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+.metric-value {
+	font-family: var(--font-monospace);
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--interactive-accent);
+}
+
+.metric-value.small {
+	font-size: 13px;
+	line-height: 24px;
+}
+
+.balance-container {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.balance-bar {
+	height: 6px;
+	width: 100%;
+	border-radius: 3px;
+	overflow: hidden;
+	display: flex;
+	background-color: var(--background-modifier-border);
+}
+
+.balance-fill {
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.balance-fill.dialogue {
+	background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.balance-fill.action {
+	background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.balance-labels {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.label-dialogue {
+	color: #818cf8;
+}
+
+.label-action {
+	color: #f59e0b;
+}

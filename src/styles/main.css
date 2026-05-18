@@ -1,2 +1,12 @@
 @import "./fonts.css";
-@import "./core_styles.css";
+@import "./components/core.css";
+@import "./components/editor.css";
+@import "./components/index_cards.css";
+@import "./components/sidebar/common.css";
+@import "./components/sidebar/toc.css";
+@import "./components/sidebar/characters.css";
+@import "./components/sidebar/metrics.css";
+@import "./components/sidebar/boneyard.css";
+@import "./components/sidebar/snippets.css";
+@import "./components/hover.css";
+@import "./components/markers.css";

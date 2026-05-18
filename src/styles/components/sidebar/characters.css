@@ -1,0 +1,108 @@
+.screenplay-characters {
+	margin-top: 12px;
+}
+
+.characters-instruction {
+	font-size: 10px;
+	color: var(--text-faint);
+	margin-bottom: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	font-weight: 600;
+}
+
+.character-stat {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 10px;
+	margin: 2px 0;
+	border-radius: 6px;
+	cursor: pointer;
+	position: relative;
+	font-size: 13px;
+	transition: background-color 0.1s ease;
+}
+
+.character-stat .open-note-icon {
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	cursor: pointer;
+	color: var(--text-muted);
+	margin-left: auto;
+	margin-right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.character-stat .open-note-icon.no-note {
+	color: var(--text-faint);
+}
+
+.character-stat:hover .open-note-icon {
+	opacity: 1;
+}
+
+.character-stat .open-note-icon:hover {
+	color: var(--text-normal);
+}
+
+.character-stat .char-count {
+	margin-left: auto;
+}
+
+/* Character Note Underline */
+.has-character-note {
+	border-bottom: 1px dotted var(--text-muted);
+	cursor: pointer;
+}
+
+.has-character-note:hover {
+	border-bottom: 1px solid var(--text-muted);
+}
+
+.character-stat:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.character-stat.active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.char-name {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex: 1;
+}
+
+.char-count {
+	font-size: 11px;
+	color: var(--text-muted);
+	background-color: var(--background-secondary-alt);
+	padding: 2px 8px;
+	border-radius: 12px;
+	margin-left: 8px;
+}
+
+.character-stat.active .char-count {
+	color: var(--text-on-accent);
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Sidebar Drag and Drop Overlay Styling */
+.scene-heading.dragging {
+	opacity: 0.4;
+	background-color: var(--background-modifier-hover);
+}
+
+.scene-heading.drop-above {
+	border-top: 2px solid var(--interactive-accent);
+}
+
+.scene-heading.drop-below {
+	border-bottom: 2px solid var(--interactive-accent);
+}

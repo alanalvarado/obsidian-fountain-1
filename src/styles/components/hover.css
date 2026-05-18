@@ -1,0 +1,30 @@
+/* Hover Preview (Scene Snapshots) */
+.fountain-hover-preview {
+	position: fixed;
+	z-index: var(--layer-popover);
+	width: 450px;
+	max-height: 400px;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	padding: 16px;
+	overflow-y: auto;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+
+	font-family: var(--font-monospace);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	color: var(--text-normal);
+
+	/* Premium frosted glass look */
+	backdrop-filter: blur(16px) saturate(180%);
+	background-color: rgba(var(--mono-rgb-100), 0.75);
+}
+
+.theme-dark .fountain-hover-preview {
+	background-color: rgba(25, 25, 25, 0.8);
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}

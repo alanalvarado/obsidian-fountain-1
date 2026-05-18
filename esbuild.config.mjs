@@ -2,17 +2,32 @@ import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
 import fs from "fs";
+import path from "path";
 
-// Concatenate CSS files: fonts.css + core_styles.css -> dist/styles.css
+
+// Helper to recursively bundle CSS @import statements
+function bundleCSS(entryPath) {
+	const content = fs.readFileSync(entryPath, "utf8");
+	const dir = path.dirname(entryPath);
+	return content.replace(/@import\s+["'](.+?)["'];/g, (match, importPath) => {
+		const fullPath = path.resolve(dir, importPath);
+		return bundleCSS(fullPath);
+	});
+}
+
+// Bundle CSS entrypoint: main.css -> dist/styles.css
 function buildStyles() {
 	if (!fs.existsSync("dist")) {
 		fs.mkdirSync("dist");
 	}
-	const fonts = fs.readFileSync("src/styles/fonts.css", "utf8");
-	const core = fs.readFileSync("src/styles/core_styles.css", "utf8");
-	fs.writeFileSync("dist/styles.css", fonts + "\n" + core);
-	fs.copyFileSync("manifest.json", "dist/manifest.json");
-	console.log("Built dist/styles.css and dist/manifest.json");
+	try {
+		const bundled = bundleCSS("src/styles/main.css");
+		fs.writeFileSync("dist/styles.css", bundled);
+		fs.copyFileSync("manifest.json", "dist/manifest.json");
+		console.log("Built dist/styles.css and dist/manifest.json");
+	} catch (err) {
+		console.error("Error building styles:", err);
+	}
 }
 
 
@@ -62,8 +77,12 @@ if (prod) {
 	process.exit(0);
 } else {
 	buildStyles();
-	// Watch for CSS changes
-	fs.watch("src/styles/fonts.css", buildStyles);
-	fs.watch("src/styles/core_styles.css", buildStyles);
+	// Watch for CSS changes recursively in src/styles
+	try {
+		fs.watch("src/styles", { recursive: true }, buildStyles);
+	} catch (err) {
+		console.warn("Could not watch src/styles recursively, falling back to files:", err.message);
+		fs.watch("src/styles/fonts.css", buildStyles);
+	}
 	await context.watch();
 }

@@ -1,0 +1,412 @@
+.screenplay {
+	--screenplay-font: "Courier Prime";
+	--bold-weight: 600;
+	--max-width: 60ch;
+	--synopsis-margin: 2ch;
+	font-family:
+		var(--screenplay-font), "Courier Final Draft", "Courier",
+		var(--font-monospace) !important;
+	--h6-font: var(--screenplay-font);
+	font-size: 12pt !important;
+	line-height: 1.1 !important;
+	font-weight: 400;
+	-webkit-font-smoothing: subpixel-antialiased;
+	text-rendering: optimizeLegibility;
+
+	/* Continuous Page Layout Settings */
+	background-color: var(--background-primary) !important;
+	color: var(--text-normal) !important;
+	width: 8.5in !important;
+	max-width: 100% !important;
+	min-height: 11in;
+	height: fit-content !important;
+	margin: 20px auto !important;
+	padding: 1in 1in 1in 1.5in !important;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--background-modifier-border);
+	box-sizing: border-box !important;
+	position: relative;
+	overflow-wrap: break-word;
+	word-break: normal;
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	white-space: pre-wrap !important;
+}
+
+.screenplay .fountain-line {
+	margin: 0 !important;
+	padding: 0 !important;
+	line-height: inherit !important;
+}
+
+/* Title Page Styles */
+.screenplay .fountain-title-page {
+	display: flex;
+	flex-direction: column;
+	min-height: calc(11in - 2in);
+	/* Full page height minus padding */
+	justify-content: space-between;
+	align-items: center;
+	position: relative;
+	margin-bottom: 2em;
+	text-align: center;
+}
+
+.screenplay .title-page-group-centered {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	flex-grow: 1;
+	width: 100%;
+}
+
+.screenplay .title-page-group-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	text-align: left;
+	margin-top: 2em;
+}
+
+.screenplay .title-page-value {
+	margin-bottom: 0.5em;
+}
+
+.screenplay .title-page-title {
+	font-weight: bold;
+	text-decoration: underline;
+	font-size: 1.2em;
+	margin-bottom: 1em;
+}
+
+.screenplay .title-page-contact,
+.screenplay .title-page-draft-date {
+	margin-top: 0.2em;
+}
+
+.fountain-view-container {
+	background-color: var(--background-secondary-alt) !important;
+	overflow: auto !important;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100%;
+}
+
+.is-phone .screenplay {
+	width: fit-content;
+	min-width: fit-content;
+}
+
+/**************** dialogue */
+
+.screenplay .dual-dialogue-character {
+	text-align: left;
+	text-transform: uppercase;
+	color: var(--h2-color);
+	font-weight: var(--bold-weight);
+	font-size: inherit;
+	width: fit-content;
+	margin-left: 1.1in;
+	margin-bottom: 0;
+	padding: 0px;
+}
+
+.screenplay .dialogue-character {
+	text-transform: uppercase;
+	color: var(--h2-color);
+	font-weight: var(--bold-weight);
+	font-size: inherit;
+	padding: 0 0 0 2.0in;
+	margin: 0;
+	width: fit-content;
+	break-after: avoid-page;
+	text-align: left;
+}
+
+.screenplay .dialogue-character-extension {
+	white-space: nowrap;
+}
+
+.screenplay .dialogue-words {
+	display: block;
+	text-align: left;
+	width: 37ch;
+	max-width: 37ch;
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-right: 0;
+	margin-left: 1.0in;
+	padding: 0px;
+	break-before: avoid-page;
+}
+
+/* On the phone we don't need number of lines on the screen to
+   match those of the printed product. We just need something
+   readable where a human still visually recognises what is what.
+   So let's center it (margin 0 auto) and don't do the padding */
+.is-phone .screenplay .dialogue-character {
+	padding: 0.1in 0 0 0;
+	margin: 0 auto;
+}
+
+.is-phone .screenplay .dialogue-words {
+	margin: 0.5in;
+	width: calc(100% - 1in);
+	max-width: calc(100% - 1in);
+}
+
+/* prevents  a page break from interrupting dialogue */
+.screenplay .dialogue {
+	break-inside: avoid;
+}
+
+/* adjust for mobile */
+.is-phone .screenplay .dialogue-words {
+	margin: 0 0 0 0.45in;
+}
+
+/* parentheticals */
+.screenplay .dialogue-parenthetical {
+	margin: 0 0 0 1.5in;
+	padding: 0px;
+	text-align: left;
+	font-style: italic;
+}
+
+/* adjust for phones */
+.is-phone .screenplay .dialogue-parenthetical {
+	margin: 0 0 0 0.8in;
+}
+
+/* Dual dialogue: two columns side-by-side. Reset the absolute indents
+   used in single-column dialogue and use column-relative indents instead. */
+.screenplay .dialogue-dual {
+	display: flex;
+	gap: 1em;
+	align-items: flex-start;
+	break-inside: avoid;
+}
+
+.screenplay .dialogue-dual>.dialogue {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.screenplay .dialogue-dual .dialogue-character {
+	padding: 0;
+	margin: 0;
+}
+
+.screenplay .dialogue-dual .dialogue-words {
+	width: auto;
+	max-width: 100%;
+	margin-left: 0;
+}
+
+.screenplay .dialogue-dual .dialogue-parenthetical {
+	margin-left: 1ch;
+}
+
+.is-phone .screenplay .dialogue-dual .dialogue-character {
+	padding: 0;
+	margin: 0;
+}
+
+.is-phone .screenplay .dialogue-dual .dialogue-words {
+	margin: 0;
+	width: auto;
+	max-width: 100%;
+}
+
+.is-phone .screenplay .dialogue-dual .dialogue-parenthetical {
+	margin-left: 1ch;
+}
+
+/****** scene headings */
+
+.screenplay .scene-heading-container {
+	position: relative;
+	display: flex;
+	align-items: center;
+	margin: 0;
+}
+
+.screenplay .scene-heading {
+	padding: 0px !important;
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	font-size: inherit;
+	text-align: left;
+	color: var(--h1-color);
+	flex-grow: 1;
+	margin: 0;
+}
+
+.screenplay .scene-number-left {
+	font-weight: bold;
+	margin-right: 1em;
+	color: var(--h1-color);
+}
+
+.screenplay .scene-number-right {
+	font-weight: bold;
+	margin-left: 1em;
+	color: var(--h1-color);
+}
+
+.screenplay .transition {
+	display: block;
+	padding: 0px;
+	text-transform: uppercase;
+	color: var(--h3-color);
+	font-weight: var(--bold-weight);
+	font-size: inherit;
+	text-align: left;
+	margin-left: 4.5in;
+}
+
+.screenplay h1,
+.screenplay h2,
+.screenplay h3,
+.screenplay h4,
+.screenplay h5 {
+	font-size: inherit;
+	text-align: left;
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	margin: 0;
+}
+
+/********* sections */
+
+.screenplay .section {
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	text-align: left;
+}
+
+/********* synopsis and notes */
+
+.screenplay .synopsis {
+	color: var(--text-muted);
+	font-style: italic;
+	margin-left: var(--synopsis-margin);
+	margin-right: var(--synopsis-margin);
+	background-color: var(--background-primary-alt);
+}
+
+.screenplay .lyrics {
+	font-style: italic;
+}
+
+.screenplay .boneyard {
+	color: var(--text-faint);
+	font-style: italic;
+}
+
+/********* centered text */
+
+.screenplay .centered {
+	text-align: center;
+	display: block;
+}
+
+/******** text decoration */
+
+:is(.screenplay, .screenplay-toc) .bold {
+	font-weight: bold;
+}
+
+:is(.screenplay, .screenplay-toc) .italics {
+	font-style: italic;
+}
+
+:is(.screenplay, .screenplay-toc) .underline {
+	text-decoration: underline;
+}
+
+.screenplay .note-symbol-minus {
+	text-decoration: line-through;
+	color: var(--color-red);
+}
+
+.screenplay .note-symbol-plus {
+	color: var(--color-green);
+}
+
+.screenplay .note-todo {
+	color: var(--text-muted);
+	font-style: italic;
+	background-image: linear-gradient(transparent 70%,
+			rgba(var(--color-yellow-rgb), 0.4) 70%);
+}
+
+.screenplay .note {
+	color: var(--text-muted);
+	font-style: italic;
+	background-color: rgba(var(--background-modifier-info-rgb), 0.3);
+}
+
+.screenplay .blackout {
+	background-color: var(--text-faint);
+	color: transparent !important;
+	border-radius: 2px;
+	user-select: none;
+	opacity: 0.3;
+}
+
+.screenplay .dimmed {
+	opacity: 0.2;
+	transition: opacity 0.2s ease;
+}
+
+.screenplay .spotlight {
+	color: var(--interactive-accent);
+	transition: color 0.2s ease;
+}
+
+/* PDF Options Dialog */
+.pdf-warning {
+	background-color: var(--background-modifier-error);
+	border-radius: 4px;
+	padding: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.pdf-warning-text {
+	color: var(--text-error);
+	font-weight: 500;
+	margin: 0 0 0.25rem 0;
+}
+
+.pdf-warning-path {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	color: var(--text-muted);
+	margin: 0;
+	word-break: break-all;
+}
+
+/* Semantic Text Coloring (no hardcoded color hex values) */
+:is(.scene-heading, .section, .cm-line)[style*="--item-color"],
+[style*="--item-color"] :is(.scene-heading, .section) {
+	color: var(--item-color) !important;
+}
+
+/* PDF Export / Print Optimizations */
+@media print {
+	.screenplay {
+		color: #000 !important;
+		text-rendering: geometricPrecision;
+	}
+
+	/* Ensure background is white for clean PDF */
+	.screenplay {
+		background-color: #fff !important;
+		box-shadow: none !important;
+		border: none !important;
+	}
+}

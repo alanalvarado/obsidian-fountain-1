@@ -1,0 +1,43 @@
+/* Boneyard Section Styling — extends .sidebar-card */
+.boneyard-item {}
+
+.boneyard-item:hover {}
+
+.boneyard-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
+.boneyard-actions {
+	display: flex;
+	gap: 4px;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.sidebar-card:hover .boneyard-actions {
+	opacity: 1;
+}
+
+.boneyard-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-normal);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
+}
+
+.boneyard-preview {
+	font-family: var(--font-monospace);
+	font-size: 11px;
+	color: var(--text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	opacity: 0.7;
+	margin-top: 4px;
+}

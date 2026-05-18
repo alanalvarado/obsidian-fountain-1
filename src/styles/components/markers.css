@@ -1,0 +1,103 @@
+/****************************************************************
+ * Premium Swallowtail Markers & High-fidelity Screenplay Tags *
+ ****************************************************************/
+
+/* CSS Theme Variables for Markers */
+:root {
+	--fountain-marker-bg: #e2e8f0;
+	--fountain-marker-text: #334155;
+}
+
+.theme-dark {
+	--fountain-marker-bg: #334155;
+	--fountain-marker-text: #cbd5e1;
+}
+
+/* Parent needs relative positioning for margin badges in Reading View */
+.screenplay :is(.action, .lyrics, .dialogue-words, .dialogue-character, .dialogue-parenthetical, .scene-heading-container, .transition, .section, .synopsis) {
+	position: relative;
+}
+
+/* Margin note styling in reading view */
+.screenplay .note-margin {
+	position: absolute;
+	right: calc(100% + 1ch);
+	width: 8ch;
+	color: var(--text-muted);
+	font-size: 0.9em;
+	font-style: normal;
+	background: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-transform: uppercase;
+	text-align: right;
+}
+
+/* Parent needs relative positioning for margin notes */
+.screenplay .action,
+.screenplay .lyrics {
+	position: relative;
+}
+
+/* Dialogue words need special handling for margin marks */
+.screenplay .dialogue-words {
+	position: relative;
+}
+
+/* Align dialogue margin marks with action margin marks - position in left margin */
+.screenplay .dialogue-words .note-margin {
+	right: calc(100% + 16ch + 1ch);
+}
+
+/* 1. Swallowtail Ribbon Flag in Margin */
+.screenplay .fountain-marker-badge {
+	position: absolute;
+	right: calc(100% + 1.2ch);
+	width: 4.2ch;
+	height: 0.9em;
+	top: 0.1em;
+	box-sizing: border-box;
+	pointer-events: none;
+	z-index: 5;
+
+	/* Force line height using a hidden text character */
+	color: transparent !important;
+	user-select: none;
+
+	/* High-end Ribbon/Swallowtail flag */
+	background: var(--fountain-marker-bg);
+
+	/* Swallowtail ribbon cut (indented inwards on the left side) */
+	clip-path: polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%);
+}
+
+/* Align dialogue margin flags correctly with the standard margins */
+.screenplay .dialogue-words .fountain-marker-badge {
+	right: calc(100% + 16ch + 1.2ch);
+}
+
+/* Handle Custom Colored Swallowtail Badges */
+.screenplay .fountain-marker-badge.has-color {
+	background: var(--item-color) !important;
+}
+
+/* 2. Ribbon body continuation line text color */
+.screenplay .fountain-marker-line {
+	color: var(--fountain-marker-text);
+}
+
+.screenplay .fountain-marker-line.has-color,
+.screenplay .scene-heading[class*="beat-color-"],
+.screenplay .section[class*="beat-color-"] {
+	color: var(--item-color) !important;
+}
+
+/* 3. Editor Raw Tag Highlighting */
+.screenplay .cm-line .fountain-marker-tag {
+	color: var(--fountain-marker-text);
+}
+
+.screenplay .cm-line .fountain-marker-tag.has-color {
+	color: var(--item-color);
+}

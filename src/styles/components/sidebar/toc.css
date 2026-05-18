@@ -1,0 +1,138 @@
+/* TOC uses UI font for better readability in sidebar */
+.screenplay-toc {
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+	line-height: 1.4;
+	max-width: none;
+	padding: 4px;
+	margin: 0;
+	background-color: transparent;
+}
+
+.screenplay-toc .scene-heading {
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	font-size: var(--font-ui-small);
+	text-align: left;
+	color: var(--text-normal);
+	margin: 0;
+	margin-top: 4px;
+	padding: 2px 4px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.screenplay-toc .scene-heading:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* First scene heading after a section doesn't need extra top margin */
+.screenplay-toc .section+.scene-heading {
+	margin-top: 2px;
+}
+
+.screenplay-toc h1,
+.screenplay-toc h2,
+.screenplay-toc h3,
+.screenplay-toc h4,
+.screenplay-toc h5 {
+	font-size: var(--font-ui-small);
+	text-align: left;
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	margin: 0;
+}
+
+.screenplay-toc .section {
+	text-transform: uppercase;
+	font-weight: var(--bold-weight);
+	text-align: left;
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	margin-top: 8px;
+	padding: 2px 4px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.screenplay-toc .section:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Indent scenes and nested content when inside a section that has a heading */
+.screenplay-toc section:has(> .section)>.scene-heading,
+.screenplay-toc section:has(> .section)>.synopsis,
+.screenplay-toc section:has(> .section)>.preview,
+.screenplay-toc section:has(> .section)>.todo,
+.screenplay-toc section:has(> .section)>section {
+	margin-left: 12px;
+}
+
+.screenplay-toc .synopsis {
+	color: var(--text-muted);
+	font-style: italic;
+	font-size: var(--font-ui-smaller);
+	margin-left: 8px;
+	padding: 2px 4px;
+	cursor: pointer;
+	border-radius: 3px;
+}
+
+.screenplay-toc .synopsis:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.screenplay-toc .preview {
+	color: var(--text-muted);
+	font-family:
+		var(--screenplay-font), "Courier Final Draft", "Courier",
+		var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	margin-left: 8px;
+	padding: 2px 4px;
+}
+
+.screenplay-toc .todo {
+	font-size: var(--font-ui-smaller);
+	margin-left: 16px;
+	padding: 2px 4px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.screenplay-toc .todo:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+:is(.screenplay, .screenplay-toc) .fountain-link {
+	color: var(--text-accent);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+:is(.screenplay, .screenplay-toc) .fountain-link:hover {
+	color: var(--text-accent-hover);
+}
+
+/* TOC & Index Card Scene Headings Flex Layout */
+:is(.screenplay-toc, .screenplay-index-card, .screenplay-index-cards) .scene-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.scene-length {
+	font-family: var(--font-monospace);
+	font-size: 10px;
+	color: var(--text-faint);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+/* Stripes & Layout (TOC ONLY) */
+.screenplay-toc [style*="--item-color"] {
+	--stripe-width: 4px;
+	border-left: var(--stripe-width) solid var(--item-color);
+	padding-left: 6px;
+}
