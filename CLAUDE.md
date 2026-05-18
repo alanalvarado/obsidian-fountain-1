@@ -16,7 +16,7 @@
 
 **Discuss design before coding.** Unless explicitly asked to implement, only discuss design and provide small code snippets when clearer than prose.
 
-**DO NOT READ fonts.css.`** It only contains font-face declarations and wastes precious tokens.
+**DO NOT READ fonts.css or fonts_data.ts.** They only contain font-face/base64 declarations and waste precious tokens.
 
 **Run e2e tests before declaring work done.** Unit tests (`npm run test`) cover parser/rendering logic but cannot catch view-layer regressions (Obsidian workspace state, sidebar interactions, programmatic-edit propagation across leaves). Always run `npm run test:e2e` and never propose a commit while it has new failures — if a failure pre-exists on `main`, surface it to the user before continuing.
 
@@ -129,4 +129,4 @@ Unit tests live in `__tests__/`. E2E tests live in `test/e2e/` (specs in `specs/
 Styling is in `core_styles.css`. As part of the build process `esbuild.config.mjs` concatenates 
 `fonts.css` and `core_styles.css` into `styles.css`.
 
-`fonts.css` and `styles.css` are very long and should not be read!
+`fonts.css`, `styles.css`, and `fonts_data.ts` are very long and should not be read!
