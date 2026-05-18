@@ -154,7 +154,7 @@
 /* Position the gutter in the left margin */
 .screenplay.cm-editor .cm-gutters {
 	position: absolute !important;
-	left: 0.5in !important;
+	left: -1.2em !important;
 	/* Position it within the 1.5in left margin */
 	background-color: transparent !important;
 	border: none !important;
@@ -1154,18 +1154,25 @@
 	padding: 0 2px;
 	background: transparent;
 	color: var(--text-muted);
-	cursor: pointer;
+}
+
+/* Vertically center the fold arrows inside CodeMirror's gutter cells */
+.screenplay.cm-editor .cm-foldGutter .cm-gutterElement {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
 }
 
 .screenplay .cm-foldGutter span {
-	color: var(--text-faint);
+	color: var(--text-muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
 }
 
-.screenplay .cm-foldGutter span:hover {
-	color: var(--text-normal);
-}
-
-.screenplay .cm-foldGutter:hover {
+.screenplay .cm-foldGutter span:hover,
+.screenplay .cm-foldGutter .cm-gutterElement:hover span {
 	color: var(--text-normal);
 }
 

@@ -103,7 +103,10 @@ export class EditorViewState implements ViewState {
         highlightSelectionMatches(),
         EditorView.editorAttributes.of({ class: "screenplay" }),
         EditorView.lineWrapping,
-        foldGutter(),
+        foldGutter({
+          openText: "▾",
+          closedText: "▸",
+        }),
         createFountainFoldService(),
         createFountainEditorPlugin(callbacks.hasCharacterNote),
         createCharacterCompletion(
